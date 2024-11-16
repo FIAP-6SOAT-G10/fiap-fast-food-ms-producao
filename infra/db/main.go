@@ -4,8 +4,10 @@ import (
 	"context"
 	"fiap-fast-food-ms-producao/adapter/context_manager"
 	"fiap-fast-food-ms-producao/adapter/database"
+	"fiap-fast-food-ms-producao/domain/models"
 	"fmt"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -26,16 +28,24 @@ func (d *databaseManager) Create(collection string, data map[string]interface{})
 func (d *databaseManager) ReadOne(collection string, query map[string]interface{}) any {
 	c := d.client.Database("fiap-tech-challenge").Collection(collection)
 	findOne := c.FindOne(context.TODO(), query)
-	return findOne
+	var result models.ProductionOrder
+	if err := findOne.Decode(&result); err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return result
 }
 
 func (d *databaseManager) UpdateOne(collection string, query any, data map[string]interface{}) (any, error) {
 	c := d.client.Database("fiap-tech-challenge").Collection(collection)
-	updateOne, err := c.UpdateOne(context.TODO(), query, data)
+
+	update := bson.M{"$set": data}
+
+	updateResult, err := c.UpdateOne(context.TODO(), query, update)
 	if err != nil {
 		return nil, err
 	}
-	return updateOne, nil
+	return updateResult, nil
 }
 
 func (d *databaseManager) Disconnect() error {
