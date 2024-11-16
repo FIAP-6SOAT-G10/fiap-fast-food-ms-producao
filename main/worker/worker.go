@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"encoding/json"
 	"fiap-fast-food-ms-producao/adapter/context_manager"
 	"fmt"
 	"log"
@@ -11,9 +12,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 )
 
-func InitWorker(ctx context_manager.ContextManager) {
+func InitWorker(ctx context_manager.ContextManager, ch chan<- map[string]interface{}) {
 
-	queueUrl := ctx.Get("aws_sqs_url")
+	queueUrl := ctx.Get("aws_production_payment_sqs_url")
 	aws_access_key_id := ctx.Get("aws_access_key_id")
 	aws_secret_access_key := ctx.Get("aws_secret_access_key")
 	aws_session_token := ctx.Get("aws_session_token")
@@ -36,7 +37,14 @@ func InitWorker(ctx context_manager.ContextManager) {
 			continue
 		}
 		for _, msg := range messages {
-			log.Printf("Received message: %s", *msg.Body)
+			var result map[string]interface{}
+			// Parse the JSON string into the map
+			if err := json.Unmarshal([]byte(*msg.Body), &result); err != nil {
+				fmt.Println("Error parsing JSON:", err)
+				return
+			}
+
+			ch <- result
 
 			_, err := sqsClient.DeleteMessage(&sqs.DeleteMessageInput{
 				QueueUrl:      aws.String(queueUrl.(string)),
@@ -52,7 +60,7 @@ func InitWorker(ctx context_manager.ContextManager) {
 }
 
 func receiveMessages(ctx context_manager.ContextManager, sqsClient *sqs.SQS) ([]*sqs.Message, error) {
-	queueUrl := ctx.Get("aws_sqs_url")
+	queueUrl := ctx.Get("aws_production_payment_sqs_url")
 	out, err := sqsClient.ReceiveMessage(&sqs.ReceiveMessageInput{
 		QueueUrl:            aws.String(queueUrl.(string)),
 		MaxNumberOfMessages: aws.Int64(10),
