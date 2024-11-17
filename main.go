@@ -32,7 +32,7 @@ func StartRouter(ctx context_manager.ContextManager, dbManager database.Database
 func StartWorker(ctx context_manager.ContextManager, dbManager database.DatabaseManger) {
 	productionOrderChannel := make(chan map[string]interface{})
 	go worker.InitWorker(ctx, productionOrderChannel)
-	go worker.ProductionOrderConsumer(ctx, dbManager, productionOrderChannel)
+	go worker.ProductionOrderConsumer(dbManager, productionOrderChannel)
 }
 
 func main() {

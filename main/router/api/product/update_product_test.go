@@ -28,5 +28,4 @@ func TestUpdateStatusPedido(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, reqFound)
 	assert.Equal(t, http.StatusOK, w.Code)
-
 }
