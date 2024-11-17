@@ -26,7 +26,11 @@ func (d *databaseManagerMock) Create(collection string, data map[string]interfac
 }
 
 func (d *databaseManagerMock) ReadOne(collection string, query map[string]interface{}) any {
-	return nil
+	model := models.ProductionOrder{
+		ID:     primitive.NewObjectID(),
+		Status: 1,
+	}
+	return model
 }
 
 func (d *databaseManagerMock) UpdateOne(collection string, query any, data map[string]interface{}) (any, error) {
@@ -41,16 +45,17 @@ func NewMockDatabase() database.DatabaseManger {
 	return &databaseManagerMock{}
 }
 
-func SharedContextMiddlewareMock(dbMock database.DatabaseManger) gin.HandlerFunc {
+func SharedContextMiddlewareMock(dbMock database.DatabaseManger, productionUpdateChannelMock chan<- []byte) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("db_client", dbMock)
+		c.Set("production_update_channel", productionUpdateChannelMock)
 		c.Next()
 	}
 }
 
 func TestCreatePedido(t *testing.T) {
 	router := gin.New()
-	router.Use(SharedContextMiddlewareMock(NewMockDatabase()))
+	router.Use(SharedContextMiddlewareMock(NewMockDatabase(), NewProductionUpdateChannel()))
 	router.POST("/pedido", CreatePedido)
 	body := dto.ProductionOrderDTO{
 		Status: "Pending",

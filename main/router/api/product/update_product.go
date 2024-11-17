@@ -5,6 +5,7 @@ import (
 	"fiap-fast-food-ms-producao/adapter/database"
 	"fiap-fast-food-ms-producao/domain/dto"
 	"fiap-fast-food-ms-producao/domain/models"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -51,8 +52,11 @@ func UpdateStatusPedido(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
 		return
 	}
+
 	productionUpdateChannel, _ := c.Get("production_update_channel")
+
 	productionUpdateChannel.(chan<- []byte) <- poBytes
+	fmt.Println("OK")
 	c.JSON(http.StatusOK, poDTO)
 }
 
