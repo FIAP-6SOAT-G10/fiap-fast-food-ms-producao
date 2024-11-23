@@ -57,27 +57,31 @@
 				
 				<option value="file0">fiap-fast-food-ms-producao/domain/dto/production_order.go (100.0%)</option>
 				
-				<option value="file1">fiap-fast-food-ms-producao/domain/models/production_status.go (37.5%)</option>
+				<option value="file1">fiap-fast-food-ms-producao/domain/models/production_status.go (100.0%)</option>
 				
-				<option value="file2">fiap-fast-food-ms-producao/infra/ctx/main.go (0.0%)</option>
+				<option value="file2">fiap-fast-food-ms-producao/infra/ctx/main.go (40.0%)</option>
 				
-				<option value="file3">fiap-fast-food-ms-producao/infra/db/main.go (0.0%)</option>
+				<option value="file3">fiap-fast-food-ms-producao/infra/db/main.go (55.2%)</option>
 				
-				<option value="file4">fiap-fast-food-ms-producao/main.go (0.0%)</option>
+				<option value="file4">fiap-fast-food-ms-producao/infra/sqs.go (0.0%)</option>
 				
-				<option value="file5">fiap-fast-food-ms-producao/main/producer/production_order_update.go (0.0%)</option>
+				<option value="file5">fiap-fast-food-ms-producao/main.go (0.0%)</option>
 				
-				<option value="file6">fiap-fast-food-ms-producao/main/router/api/product/create_product.go (66.7%)</option>
+				<option value="file6">fiap-fast-food-ms-producao/main/producer/production_order_update.go (71.4%)</option>
 				
-				<option value="file7">fiap-fast-food-ms-producao/main/router/api/product/update_product.go (78.8%)</option>
+				<option value="file7">fiap-fast-food-ms-producao/main/router/api/product/create_product.go (100.0%)</option>
 				
-				<option value="file8">fiap-fast-food-ms-producao/main/router/middleware/share_contex.go (0.0%)</option>
+				<option value="file8">fiap-fast-food-ms-producao/main/router/api/product/update_product.go (78.8%)</option>
 				
-				<option value="file9">fiap-fast-food-ms-producao/main/router/router.go (0.0%)</option>
+				<option value="file9">fiap-fast-food-ms-producao/main/router/middleware/share_contex.go (100.0%)</option>
 				
-				<option value="file10">fiap-fast-food-ms-producao/main/worker/production_order.go (88.9%)</option>
+				<option value="file10">fiap-fast-food-ms-producao/main/router/router.go (0.0%)</option>
 				
-				<option value="file11">fiap-fast-food-ms-producao/main/worker/worker.go (0.0%)</option>
+				<option value="file11">fiap-fast-food-ms-producao/main/worker/production_order.go (88.9%)</option>
+				
+				<option value="file12">fiap-fast-food-ms-producao/main/worker/worker.go (0.0%)</option>
+				
+				<option value="file13">fiap-fast-food-ms-producao/mocks/mock_context_manager.go (55.6%)</option>
 				
 				</select>
 			</div>
@@ -122,21 +126,21 @@ const (
         Failed
 )
 
-func (s Status) String() string <span class="cov0" title="0">{
+func (s Status) String() string <span class="cov8" title="1">{
         return [...]string{"Pending", "InProgress", "Completed", "Failed"}[s]
 }</span>
 
 func StatusFromString(str string) (Status, error) <span class="cov8" title="1">{
         switch str </span>{
-        case "Pending":<span class="cov0" title="0">
+        case "Pending":<span class="cov8" title="1">
                 return Pending, nil</span>
         case "InProgress":<span class="cov8" title="1">
                 return InProgress, nil</span>
-        case "Completed":<span class="cov0" title="0">
+        case "Completed":<span class="cov8" title="1">
                 return Completed, nil</span>
-        case "Failed":<span class="cov0" title="0">
+        case "Failed":<span class="cov8" title="1">
                 return Failed, nil</span>
-        default:<span class="cov0" title="0">
+        default:<span class="cov8" title="1">
                 return 0, errors.New("invalid status")</span>
         }
 }
@@ -153,9 +157,11 @@ import (
         "fiap-fast-food-ms-producao/adapter/context_manager"
         "fiap-fast-food-ms-producao/infra/db"
         "log"
+        "reflect"
         "sync"
 
         "github.com/gin-gonic/gin"
+        "github.com/golang/mock/gomock"
         "github.com/spf13/viper"
 )
 
@@ -164,42 +170,41 @@ type contextManager struct {
         mu   sync.RWMutex
 }
 
-func (c *contextManager) Set(key string, value any) <span class="cov0" title="0">{
+func (c *contextManager) Set(key string, value any) <span class="cov8" title="1">{
         c.mu.Lock()
         defer c.mu.Unlock()
         c.envs[key] = value
 }</span>
 
-func (c *contextManager) Get(key string) any <span class="cov0" title="0">{
+func (c *contextManager) Get(key string) any <span class="cov8" title="1">{
         c.mu.RLock()
         defer c.mu.RUnlock()
         return c.envs[key]
 }</span>
 
-func (c *contextManager) PassContext(obj *gin.Context) <span class="cov0" title="0">{
-        for key, value := range c.envs </span><span class="cov0" title="0">{
+func (c *contextManager) PassContext(obj *gin.Context) <span class="cov8" title="1">{
+        for key, value := range c.envs </span><span class="cov8" title="1">{
                 obj.Set(key, value)
         }</span>
 }
 
-func configContext(ctx *contextManager) error <span class="cov0" title="0">{
-        viper.SetConfigFile(".env")
-        if err := viper.ReadInConfig(); err != nil </span><span class="cov0" title="0">{
-                log.Fatalf("Error reading config file: %v", err)
+func configContext(ctx *contextManager, envName string) error <span class="cov8" title="1">{
+        viper.SetConfigFile(envName)
+        if err := viper.ReadInConfig(); err != nil </span><span class="cov8" title="1">{
                 return errors.New("no environment variables found in configuration")
         }</span>
 
-        <span class="cov0" title="0">for _, key := range viper.AllKeys() </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">for _, key := range viper.AllKeys() </span><span class="cov8" title="1">{
                 ctx.Set(key, viper.Get(key))
         }</span>
-        <span class="cov0" title="0">return nil</span>
+        <span class="cov8" title="1">return nil</span>
 }
 
 func NewContextManager() context_manager.ContextManager <span class="cov0" title="0">{
         ctx := contextManager{
                 envs: make(map[string]any),
         }
-        configContext(&amp;ctx)
+        configContext(&amp;ctx, ".env")
         mongoClient, err := db.NewDatabaseManager(&amp;ctx)
         if err != nil </span><span class="cov0" title="0">{
                 log.Fatalf("Error creating mongo client")
@@ -207,6 +212,54 @@ func NewContextManager() context_manager.ContextManager <span class="cov0" title
         <span class="cov0" title="0">ctx.Set("mongo_client", mongoClient)
         return &amp;ctx</span>
 }
+
+type MockContextManager struct {
+        ctrl     *gomock.Controller
+        recorder *MockContextManagerMockRecorder
+}
+
+// MockContextManagerMockRecorder is the mock recorder for MockContextManager.
+type MockContextManagerMockRecorder struct {
+        mock *MockContextManager
+}
+
+// NewMockContextManager creates a new mock instance.
+func NewMockContextManager(ctrl *gomock.Controller) *MockContextManager <span class="cov0" title="0">{
+        mock := &amp;MockContextManager{ctrl: ctrl}
+        mock.recorder = &amp;MockContextManagerMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockContextManager) EXPECT() *MockContextManagerMockRecorder <span class="cov0" title="0">{
+        return m.recorder
+}</span>
+
+// Get mocks base method.
+func (m *MockContextManager) Get(key string) interface{} <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Get", key)
+        ret0, _ := ret[0].(interface{})
+        return ret0
+}</span>
+
+// Get indicates an expected call of Get.
+func (mr *MockContextManagerMockRecorder) Get(key interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockContextManager)(nil).Get), key)
+}</span>
+
+// Set mocks base method.
+func (m *MockContextManager) Set(key string, value interface{}) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        m.ctrl.Call(m, "Set", key, value)
+}</span>
+
+// Set indicates an expected call of Set.
+func (mr *MockContextManagerMockRecorder) Set(key, value interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockContextManager)(nil).Set), key, value)
+}</span>
 </pre>
 		
 		<pre class="file" id="file3" style="display: none">package db
@@ -227,33 +280,34 @@ type databaseManager struct {
         client *mongo.Client
 }
 
-func (d *databaseManager) Create(collection string, data map[string]interface{}) (any, error) <span class="cov0" title="0">{
-        c := d.client.Database("fiap-tech-challenge").Collection(collection)
+func (d *databaseManager) Create(collection string, data map[string]interface{}) (any, error) <span class="cov8" title="1">{
+        database := d.client.Database("fiap-tech-challenge")
+        c := database.Collection(collection)
         insertOne, err := c.InsertOne(context.TODO(), data)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
         <span class="cov0" title="0">return insertOne, nil</span>
 }
 
-func (d *databaseManager) ReadOne(collection string, query map[string]interface{}) any <span class="cov0" title="0">{
+func (d *databaseManager) ReadOne(collection string, query map[string]interface{}) any <span class="cov8" title="1">{
         c := d.client.Database("fiap-tech-challenge").Collection(collection)
         findOne := c.FindOne(context.TODO(), query)
         var result models.ProductionOrder
-        if err := findOne.Decode(&amp;result); err != nil </span><span class="cov0" title="0">{
+        if err := findOne.Decode(&amp;result); err != nil </span><span class="cov8" title="1">{
                 fmt.Println(err)
                 return nil
         }</span>
         <span class="cov0" title="0">return result</span>
 }
 
-func (d *databaseManager) UpdateOne(collection string, query any, data map[string]interface{}) (any, error) <span class="cov0" title="0">{
+func (d *databaseManager) UpdateOne(collection string, query any, data map[string]interface{}) (any, error) <span class="cov8" title="1">{
         c := d.client.Database("fiap-tech-challenge").Collection(collection)
 
         update := bson.M{"$set": data}
 
         updateResult, err := c.UpdateOne(context.TODO(), query, update)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
         <span class="cov0" title="0">return updateResult, nil</span>
@@ -278,11 +332,36 @@ func NewDatabaseManager(ctx context_manager.ContextManager) (database.DatabaseMa
 }
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package main
+		<pre class="file" id="file4" style="display: none">package sqs
+
+import (
+        "fmt"
+
+        "github.com/aws/aws-sdk-go/aws"
+        "github.com/aws/aws-sdk-go/aws/session"
+        "github.com/aws/aws-sdk-go/service/sqs"
+        "github.com/aws/aws-sdk-go/service/sqs/sqsiface"
+)
+
+// NewSQSClient initializes the SQS client.
+func NewSQSClient(region, queueURL string) (sqsiface.SQSAPI, error) <span class="cov0" title="0">{
+        sess, err := session.NewSession(&amp;aws.Config{
+                Region: aws.String(region),
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create AWS session: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return sqs.New(sess), nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package main
 
 import (
         "fiap-fast-food-ms-producao/adapter/context_manager"
         "fiap-fast-food-ms-producao/adapter/database"
+        sqs "fiap-fast-food-ms-producao/infra"
         "fiap-fast-food-ms-producao/infra/ctx"
         "fiap-fast-food-ms-producao/infra/db"
         "fiap-fast-food-ms-producao/main/producer"
@@ -304,7 +383,11 @@ func StartRouter(ctx context_manager.ContextManager, dbManager database.Database
                 }</span>
         }(dbManager)
         <span class="cov0" title="0">router := router.InitRouter(ctx, dbManager, productionUpdateChannel)
-        go producer.ProductionOrderUpdateProducer(ctx, productionUpdateChannel)
+
+        sqsUrl := ctx.Get("aws_production_update_sqs_url")
+        sqsClient, _ := sqs.NewSQSClient("us-east-1", sqsUrl.(string))
+
+        go producer.ProductionOrderUpdateProducer(ctx, productionUpdateChannel, sqsClient)
         port := ctx.Get("port")
         router.Run(fmt.Sprintf(":%v", port))</span>
 }
@@ -331,51 +414,36 @@ func main() <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package producer
+		<pre class="file" id="file6" style="display: none">package producer
 
 import (
         "fiap-fast-food-ms-producao/adapter/context_manager"
         "log"
 
         "github.com/aws/aws-sdk-go/aws"
-        "github.com/aws/aws-sdk-go/aws/credentials"
-        "github.com/aws/aws-sdk-go/aws/session"
         "github.com/aws/aws-sdk-go/service/sqs"
+        "github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 )
 
-func ProductionOrderUpdateProducer(ctx context_manager.ContextManager, ch &lt;-chan []byte) error <span class="cov0" title="0">{
-        queueUrl := ctx.Get("aws_production_update_sqs_url")
-        aws_region := ctx.Get("aws_region")
-        aws_access_key_id := ctx.Get("aws_access_key_id")
-        aws_secret_access_key := ctx.Get("aws_secret_access_key")
-        aws_session_token := ctx.Get("aws_session_token")
+func ProductionOrderUpdateProducer(ctx context_manager.ContextManager, ch &lt;-chan []byte, sqsClient sqsiface.SQSAPI) error <span class="cov8" title="1">{
+        queueUrl := ctx.Get("aws_production_update_sqs_url").(string)
 
-        sess := session.Must(session.NewSession(
-                &amp;aws.Config{
-                        Endpoint:    aws.String(""),
-                        Region:      aws.String(aws_region.(string)),
-                        Credentials: credentials.NewStaticCredentials(aws_access_key_id.(string), aws_secret_access_key.(string), aws_session_token.(string)),
-                },
-        ))
-
-        for message := range ch </span><span class="cov0" title="0">{
-                sqsClient := sqs.New(sess)
+        for message := range ch </span><span class="cov8" title="1">{
                 _, err := sqsClient.SendMessage(&amp;sqs.SendMessageInput{
-                        QueueUrl:    aws.String(queueUrl.(string)),
+                        QueueUrl:    aws.String(queueUrl),
                         MessageBody: aws.String(string(message)),
                 })
-
                 if err != nil </span><span class="cov0" title="0">{
-                        log.Fatalf("Failed to send message: %v", err)
+                        log.Printf("Failed to send message: %v", err)
+                        return err
                 }</span>
-
         }
 
-        <span class="cov0" title="0">return nil</span>
+        <span class="cov8" title="1">return nil</span>
 }
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package product
+		<pre class="file" id="file7" style="display: none">package product
 
 import (
         "fiap-fast-food-ms-producao/adapter/database"
@@ -388,7 +456,7 @@ import (
 func CreatePedido(c *gin.Context) <span class="cov8" title="1">{
 
         var req dto.ProductionOrderDTO
-        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov0" title="0">{
+        if err := c.ShouldBindJSON(&amp;req); err != nil </span><span class="cov8" title="1">{
                 c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
                 return
         }</span>
@@ -400,7 +468,7 @@ func CreatePedido(c *gin.Context) <span class="cov8" title="1">{
         productionOrder, _ := mongoClient.Create(collectionName, map[string]interface{}{
                 "status": req.Status,
         })
-        if productionOrder == nil </span><span class="cov0" title="0">{
+        if productionOrder == nil </span><span class="cov8" title="1">{
                 c.JSON(http.StatusNotFound, gin.H{"message": "Product Order Not Found"})
                 return
         }</span>
@@ -408,7 +476,7 @@ func CreatePedido(c *gin.Context) <span class="cov8" title="1">{
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package product
+		<pre class="file" id="file8" style="display: none">package product
 
 import (
         "encoding/json"
@@ -481,7 +549,7 @@ func StructToBytes(dto dto.ProductionOrderDTO) ([]byte, error) <span class="cov8
 }
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package middleware
+		<pre class="file" id="file9" style="display: none">package middleware
 
 import (
         "fiap-fast-food-ms-producao/adapter/context_manager"
@@ -490,8 +558,8 @@ import (
         "github.com/gin-gonic/gin"
 )
 
-func SharedContextMiddleware(context *context_manager.ContextManager, dbManager database.DatabaseManger, productionUpdateChannel chan&lt;- []byte) gin.HandlerFunc <span class="cov0" title="0">{
-        return func(c *gin.Context) </span><span class="cov0" title="0">{
+func SharedContextMiddleware(context *context_manager.ContextManager, dbManager database.DatabaseManger, productionUpdateChannel chan&lt;- []byte) gin.HandlerFunc <span class="cov8" title="1">{
+        return func(c *gin.Context) </span><span class="cov8" title="1">{
                 (*context).PassContext(c)
                 c.Set("db_client", dbManager)
                 c.Set("production_update_channel", productionUpdateChannel)
@@ -500,7 +568,7 @@ func SharedContextMiddleware(context *context_manager.ContextManager, dbManager 
 }
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package router
+		<pre class="file" id="file10" style="display: none">package router
 
 import (
         "fiap-fast-food-ms-producao/adapter/context_manager"
@@ -522,7 +590,7 @@ func InitRouter(context context_manager.ContextManager, dbManager database.Datab
 }</span>
 </pre>
 		
-		<pre class="file" id="file10" style="display: none">package worker
+		<pre class="file" id="file11" style="display: none">package worker
 
 import (
         "encoding/json"
@@ -547,11 +615,12 @@ func ProductionOrderConsumer(dbManager database.DatabaseManger, ch &lt;-chan map
 }
 </pre>
 		
-		<pre class="file" id="file11" style="display: none">package worker
+		<pre class="file" id="file12" style="display: none">package worker
 
 import (
         "encoding/json"
         "fiap-fast-food-ms-producao/adapter/context_manager"
+        "fiap-fast-food-ms-producao/adapter/worker_manager"
         "fmt"
         "log"
 
@@ -561,7 +630,61 @@ import (
         "github.com/aws/aws-sdk-go/service/sqs"
 )
 
-func InitWorker(ctx context_manager.ContextManager, ch chan&lt;- map[string]interface{}) <span class="cov0" title="0">{
+type BrokerMessageWorkerSQS struct {
+        client      *sqs.SQS
+        ctx         context_manager.ContextManager
+        queueUrl    string
+        messageChan chan&lt;- map[string]interface{}
+}
+
+func (b *BrokerMessageWorkerSQS) Consume() <span class="cov0" title="0">{
+        for </span><span class="cov0" title="0">{
+                messages, err := b.receiveMessages(b.queueUrl)
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Printf("Error receiving messages: %v", err)
+                        continue</span>
+                }
+                <span class="cov0" title="0">for _, msg := range messages </span><span class="cov0" title="0">{
+                        var result map[string]interface{}
+                        // Parse the JSON string into the map
+                        if err := json.Unmarshal([]byte(*msg.Body), &amp;result); err != nil </span><span class="cov0" title="0">{
+                                fmt.Println("Error parsing JSON:", err)
+                                return
+                        }</span>
+
+                        <span class="cov0" title="0">b.Produce(result)
+
+                        _, err := b.client.DeleteMessage(&amp;sqs.DeleteMessageInput{
+                                QueueUrl:      aws.String(b.queueUrl),
+                                ReceiptHandle: msg.ReceiptHandle,
+                        })
+                        if err != nil </span><span class="cov0" title="0">{
+                                log.Printf("Error deleting message: %v", err)
+                                continue</span>
+                        }
+
+                }
+        }
+}
+
+func (b *BrokerMessageWorkerSQS) Produce(message map[string]interface{}) <span class="cov0" title="0">{
+        b.messageChan &lt;- message
+}</span>
+
+func (b *BrokerMessageWorkerSQS) receiveMessages(queueUrl string) ([]*sqs.Message, error) <span class="cov0" title="0">{
+        out, err := b.client.ReceiveMessage(&amp;sqs.ReceiveMessageInput{
+                QueueUrl:            aws.String(queueUrl),
+                MaxNumberOfMessages: aws.Int64(10),
+                WaitTimeSeconds:     aws.Int64(10),
+                VisibilityTimeout:   aws.Int64(10),
+        })
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return out.Messages, nil</span>
+}
+
+func InitWorker(ctx context_manager.ContextManager, ch chan&lt;- map[string]interface{}) (worker_manager.BrokerMessageConsumer, error) <span class="cov0" title="0">{
 
         queueUrl := ctx.Get("aws_production_payment_sqs_url")
         aws_access_key_id := ctx.Get("aws_access_key_id")
@@ -577,50 +700,91 @@ func InitWorker(ctx context_manager.ContextManager, ch chan&lt;- map[string]inte
                 }))
         sqsClient := sqs.New(sess)
 
-        fmt.Print("Started Worker")
-
-        for </span><span class="cov0" title="0">{
-                messages, err := receiveMessages(ctx, sqsClient)
-                if err != nil </span><span class="cov0" title="0">{
-                        log.Printf("Error receiving messages: %v", err)
-                        continue</span>
-                }
-                <span class="cov0" title="0">for _, msg := range messages </span><span class="cov0" title="0">{
-                        var result map[string]interface{}
-                        // Parse the JSON string into the map
-                        if err := json.Unmarshal([]byte(*msg.Body), &amp;result); err != nil </span><span class="cov0" title="0">{
-                                fmt.Println("Error parsing JSON:", err)
-                                return
-                        }</span>
-
-                        <span class="cov0" title="0">ch &lt;- result
-
-                        _, err := sqsClient.DeleteMessage(&amp;sqs.DeleteMessageInput{
-                                QueueUrl:      aws.String(queueUrl.(string)),
-                                ReceiptHandle: msg.ReceiptHandle,
-                        })
-                        if err != nil </span><span class="cov0" title="0">{
-                                log.Printf("Error deleting message: %v", err)
-                                continue</span>
-                        }
-
-                }
+        brokerMessage := BrokerMessageWorkerSQS{
+                client:      sqsClient,
+                queueUrl:    queueUrl.(string),
+                ctx:         ctx,
+                messageChan: ch,
         }
+
+        brokerMessage.Consume()
+        go brokerMessage.Consume()
+        return &amp;brokerMessage, nil
+}</span>
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">// Code generated by MockGen. DO NOT EDIT.
+// Source: fiap-fast-food-ms-producao/adapter/context_manager (interfaces: ContextManager)
+
+// Package mocks is a generated GoMock package.
+package mocks
+
+import (
+        gin "github.com/gin-gonic/gin"
+        gomock "github.com/golang/mock/gomock"
+        reflect "reflect"
+)
+
+// MockContextManager is a mock of ContextManager interface
+type MockContextManager struct {
+        ctrl     *gomock.Controller
+        recorder *MockContextManagerMockRecorder
 }
 
-func receiveMessages(ctx context_manager.ContextManager, sqsClient *sqs.SQS) ([]*sqs.Message, error) <span class="cov0" title="0">{
-        queueUrl := ctx.Get("aws_production_payment_sqs_url")
-        out, err := sqsClient.ReceiveMessage(&amp;sqs.ReceiveMessageInput{
-                QueueUrl:            aws.String(queueUrl.(string)),
-                MaxNumberOfMessages: aws.Int64(10),
-                WaitTimeSeconds:     aws.Int64(10),
-                VisibilityTimeout:   aws.Int64(10),
-        })
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, err
-        }</span>
-        <span class="cov0" title="0">return out.Messages, nil</span>
+// MockContextManagerMockRecorder is the mock recorder for MockContextManager
+type MockContextManagerMockRecorder struct {
+        mock *MockContextManager
 }
+
+// NewMockContextManager creates a new mock instance
+func NewMockContextManager(ctrl *gomock.Controller) *MockContextManager <span class="cov8" title="1">{
+        mock := &amp;MockContextManager{ctrl: ctrl}
+        mock.recorder = &amp;MockContextManagerMockRecorder{mock}
+        return mock
+}</span>
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockContextManager) EXPECT() *MockContextManagerMockRecorder <span class="cov8" title="1">{
+        return m.recorder
+}</span>
+
+// Get mocks base method
+func (m *MockContextManager) Get(arg0 string) interface{} <span class="cov8" title="1">{
+        m.ctrl.T.Helper()
+        ret := m.ctrl.Call(m, "Get", arg0)
+        ret0, _ := ret[0].(interface{})
+        return ret0
+}</span>
+
+// Get indicates an expected call of Get
+func (mr *MockContextManagerMockRecorder) Get(arg0 interface{}) *gomock.Call <span class="cov8" title="1">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockContextManager)(nil).Get), arg0)
+}</span>
+
+// PassContext mocks base method
+func (m *MockContextManager) PassContext(arg0 *gin.Context) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        m.ctrl.Call(m, "PassContext", arg0)
+}</span>
+
+// PassContext indicates an expected call of PassContext
+func (mr *MockContextManagerMockRecorder) PassContext(arg0 interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PassContext", reflect.TypeOf((*MockContextManager)(nil).PassContext), arg0)
+}</span>
+
+// Set mocks base method
+func (m *MockContextManager) Set(arg0 string, arg1 interface{}) <span class="cov0" title="0">{
+        m.ctrl.T.Helper()
+        m.ctrl.Call(m, "Set", arg0, arg1)
+}</span>
+
+// Set indicates an expected call of Set
+func (mr *MockContextManagerMockRecorder) Set(arg0, arg1 interface{}) *gomock.Call <span class="cov0" title="0">{
+        mr.mock.ctrl.T.Helper()
+        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockContextManager)(nil).Set), arg0, arg1)
+}</span>
 </pre>
 		
 		</div>

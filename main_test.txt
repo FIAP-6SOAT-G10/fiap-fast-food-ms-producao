@@ -1,0 +1,86 @@
+package main
+
+import (
+	"fiap-fast-food-ms-producao/adapter/context_manager"
+	"fiap-fast-food-ms-producao/adapter/database"
+	"fiap-fast-food-ms-producao/main/producer"
+	"fiap-fast-food-ms-producao/main/router"
+	"fiap-fast-food-ms-producao/main/worker"
+	"testing"
+	"time"
+
+	"github.com/golang/mock/gomock"
+)
+
+// TestStartRouter verifies the behavior of StartRouter.
+func TestStartRouter(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockCtx := context_manager.NewMockContextManager(ctrl)
+	mockDB := database.NewMockDatabaseManger(ctrl)
+
+	productionUpdateChannel := make(chan []byte)
+	defer close(productionUpdateChannel)
+
+	// Mock context behavior
+	mockCtx.EXPECT().Get("port").Return("8080").Times(1)
+
+	// Mock DB disconnect
+	mockDB.EXPECT().Disconnect().Return(nil).Times(1)
+
+	// Mock router initialization
+	mockRouter := router.NewMockRouter(ctrl)
+	router.InitRouter = func(ctx context_manager.ContextManager, dbManager database.DatabaseManger, channel chan []byte) router.Router {
+		return mockRouter
+	}
+
+	// Mock router behavior
+	mockRouter.EXPECT().Run(":8080").DoAndReturn(func(string) {
+		// Simulate a short delay to allow goroutines to start
+		time.Sleep(100 * time.Millisecond)
+	}).Times(1)
+
+	// Mock producer behavior
+	producer.ProductionOrderUpdateProducer = func(ctx context_manager.ContextManager, channel chan []byte) {
+		go func() {
+			// Simulate sending a message
+			channel <- []byte("test message")
+		}()
+	}
+
+	go StartRouter(mockCtx, mockDB)
+	time.Sleep(200 * time.Millisecond)
+}
+
+// TestStartWorker verifies the behavior of StartWorker.
+func TestStartWorker(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockCtx := context_manager.NewMockContextManager(ctrl)
+	mockDB := database.NewMockDatabaseManger(ctrl)
+
+	productionOrderChannel := make(chan map[string]interface{})
+	defer close(productionOrderChannel)
+
+	// Mock worker initialization
+	worker.InitWorker = func(ctx context_manager.ContextManager, channel chan map[string]interface{}) {
+		go func() {
+			channel <- map[string]interface{}{"order_id": "1234"}
+		}()
+	}
+
+	// Mock consumer behavior
+	worker.ProductionOrderConsumer = func(dbManager database.DatabaseManger, channel chan map[string]interface{}) {
+		go func() {
+			msg := <-channel
+			if msg["order_id"] != "1234" {
+				t.Errorf("Expected order_id 1234, got %v", msg["order_id"])
+			}
+		}()
+	}
+
+	go StartWorker(mockCtx, mockDB)
+	time.Sleep(200 * time.Millisecond)
+}

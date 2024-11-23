@@ -6,6 +6,7 @@ import (
 	"fiap-fast-food-ms-producao/adapter/database"
 	"fiap-fast-food-ms-producao/domain/dto"
 	"fiap-fast-food-ms-producao/domain/models"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,6 +19,10 @@ import (
 type databaseManagerMock struct{}
 
 func (d *databaseManagerMock) Create(collection string, data map[string]interface{}) (any, error) {
+	fmt.Println(data)
+	if data["status"] == "Failed" {
+		return nil, nil
+	}
 	model := models.ProductionOrder{
 		ID:     primitive.NewObjectID(),
 		Status: 1,
@@ -65,4 +70,29 @@ func TestCreatePedido(t *testing.T) {
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, reqFound)
 	assert.Equal(t, http.StatusCreated, w.Code)
+}
+
+func TestWrongRequestCreatePedido(t *testing.T) {
+	router := gin.New()
+	router.Use(SharedContextMiddlewareMock(NewMockDatabase(), NewProductionUpdateChannel()))
+	router.POST("/pedido", CreatePedido)
+	jsonValue := `{"field1": "value1", "field2":}`
+	reqFound, _ := http.NewRequest("POST", "/pedido", bytes.NewBuffer([]byte(jsonValue)))
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, reqFound)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestNotCreateCreatePedido(t *testing.T) {
+	router := gin.New()
+	router.Use(SharedContextMiddlewareMock(NewMockDatabase(), NewProductionUpdateChannel()))
+	router.POST("/pedido", CreatePedido)
+	body := dto.ProductionOrderDTO{
+		Status: "Failed",
+	}
+	jsonValue, _ := json.Marshal(body)
+	reqFound, _ := http.NewRequest("POST", "/pedido", bytes.NewBuffer(jsonValue))
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, reqFound)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }

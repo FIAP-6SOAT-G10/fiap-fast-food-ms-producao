@@ -3,6 +3,7 @@ package main
 import (
 	"fiap-fast-food-ms-producao/adapter/context_manager"
 	"fiap-fast-food-ms-producao/adapter/database"
+	sqs "fiap-fast-food-ms-producao/infra"
 	"fiap-fast-food-ms-producao/infra/ctx"
 	"fiap-fast-food-ms-producao/infra/db"
 	"fiap-fast-food-ms-producao/main/producer"
@@ -24,7 +25,11 @@ func StartRouter(ctx context_manager.ContextManager, dbManager database.Database
 		}
 	}(dbManager)
 	router := router.InitRouter(ctx, dbManager, productionUpdateChannel)
-	go producer.ProductionOrderUpdateProducer(ctx, productionUpdateChannel)
+
+	sqsUrl := ctx.Get("aws_production_update_sqs_url")
+	sqsClient, _ := sqs.NewSQSClient("us-east-1", sqsUrl.(string))
+
+	go producer.ProductionOrderUpdateProducer(ctx, productionUpdateChannel, sqsClient)
 	port := ctx.Get("port")
 	router.Run(fmt.Sprintf(":%v", port))
 }
