@@ -3,9 +3,9 @@ package main
 import (
 	"fiap-fast-food-ms-producao/adapter/context_manager"
 	"fiap-fast-food-ms-producao/adapter/database"
-	sqs "fiap-fast-food-ms-producao/infra"
 	"fiap-fast-food-ms-producao/infra/ctx"
 	"fiap-fast-food-ms-producao/infra/db"
+	"fiap-fast-food-ms-producao/infra/sqs"
 	"fiap-fast-food-ms-producao/main/producer"
 	"fiap-fast-food-ms-producao/main/router"
 	"fiap-fast-food-ms-producao/main/worker"
