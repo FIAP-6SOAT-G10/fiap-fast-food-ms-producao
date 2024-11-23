@@ -52,7 +52,7 @@ func NewContextManager() context_manager.ContextManager {
 	ctx := contextManager{
 		envs: make(map[string]any),
 	}
-	configContext(&ctx, ".env")
+	configContext(&ctx, "/home/gabs/Documents/projetos/fiap-fast-food-ms-producao/.env")
 	mongoClient, err := db.NewDatabaseManager(&ctx)
 	if err != nil {
 		log.Fatalf("Error creating mongo client")

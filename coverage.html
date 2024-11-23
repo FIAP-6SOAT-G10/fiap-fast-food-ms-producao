@@ -75,7 +75,7 @@
 				
 				<option value="file9">fiap-fast-food-ms-producao/main/router/middleware/share_contex.go (100.0%)</option>
 				
-				<option value="file10">fiap-fast-food-ms-producao/main/router/router.go (0.0%)</option>
+				<option value="file10">fiap-fast-food-ms-producao/main/router/router.go (100.0%)</option>
 				
 				<option value="file11">fiap-fast-food-ms-producao/main/worker/production_order.go (88.9%)</option>
 				
@@ -204,7 +204,7 @@ func NewContextManager() context_manager.ContextManager <span class="cov0" title
         ctx := contextManager{
                 envs: make(map[string]any),
         }
-        configContext(&amp;ctx, ".env")
+        configContext(&amp;ctx, "/home/gabs/Documents/projetos/fiap-fast-food-ms-producao/.env")
         mongoClient, err := db.NewDatabaseManager(&amp;ctx)
         if err != nil </span><span class="cov0" title="0">{
                 log.Fatalf("Error creating mongo client")
@@ -579,7 +579,7 @@ import (
         "github.com/gin-gonic/gin"
 )
 
-func InitRouter(context context_manager.ContextManager, dbManager database.DatabaseManger, productionUpdateChannel chan&lt;- []byte) *gin.Engine <span class="cov0" title="0">{
+func InitRouter(context context_manager.ContextManager, dbManager database.DatabaseManger, productionUpdateChannel chan&lt;- []byte) *gin.Engine <span class="cov8" title="1">{
         router := gin.New()
         router.Use(middleware.SharedContextMiddleware(&amp;context, dbManager, productionUpdateChannel))
 
