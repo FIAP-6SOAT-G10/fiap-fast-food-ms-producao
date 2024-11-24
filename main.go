@@ -5,6 +5,7 @@ import (
 	"fiap-fast-food-ms-producao/adapter/database"
 	"fiap-fast-food-ms-producao/infra/ctx"
 	"fiap-fast-food-ms-producao/infra/db"
+	"fiap-fast-food-ms-producao/infra/sqs"
 	"fiap-fast-food-ms-producao/main/producer"
 	"fiap-fast-food-ms-producao/main/router"
 	"fiap-fast-food-ms-producao/main/worker"
@@ -24,7 +25,10 @@ func StartRouter(ctx context_manager.ContextManager, dbManager database.Database
 		}
 	}(dbManager)
 	router := router.InitRouter(ctx, dbManager, productionUpdateChannel)
-	go producer.ProductionOrderUpdateProducer(ctx, productionUpdateChannel)
+
+	sqsClient, _ := sqs.NewSQSClient(ctx, "us-east-1")
+
+	go producer.ProductionOrderUpdateProducer(ctx, productionUpdateChannel, sqsClient)
 	port := ctx.Get("port")
 	router.Run(fmt.Sprintf(":%v", port))
 }
@@ -32,7 +36,7 @@ func StartRouter(ctx context_manager.ContextManager, dbManager database.Database
 func StartWorker(ctx context_manager.ContextManager, dbManager database.DatabaseManger) {
 	productionOrderChannel := make(chan map[string]interface{})
 	go worker.InitWorker(ctx, productionOrderChannel)
-	go worker.ProductionOrderConsumer(ctx, dbManager, productionOrderChannel)
+	go worker.ProductionOrderConsumer(dbManager, productionOrderChannel)
 }
 
 func main() {

@@ -3,6 +3,7 @@ package worker
 import (
 	"encoding/json"
 	"fiap-fast-food-ms-producao/adapter/context_manager"
+	"fiap-fast-food-ms-producao/adapter/worker_manager"
 	"fmt"
 	"log"
 
@@ -10,9 +11,64 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 )
 
-func InitWorker(ctx context_manager.ContextManager, ch chan<- map[string]interface{}) {
+type BrokerMessageWorkerSQS struct {
+	client      sqsiface.SQSAPI
+	ctx         context_manager.ContextManager
+	queueUrl    string
+	messageChan chan<- map[string]interface{}
+}
+
+func (b *BrokerMessageWorkerSQS) Consume() {
+	for {
+		messages, err := b.receiveMessages(b.queueUrl)
+		if err != nil {
+			log.Printf("Error receiving messages: %v", err)
+			break
+		}
+		for _, msg := range messages {
+			var result map[string]interface{}
+			// Parse the JSON string into the map
+			if err := json.Unmarshal([]byte(*msg.Body), &result); err != nil {
+				fmt.Println("Error parsing JSON:", err)
+				return
+			}
+
+			b.Produce(result)
+
+			_, err := b.client.DeleteMessage(&sqs.DeleteMessageInput{
+				QueueUrl:      aws.String(b.queueUrl),
+				ReceiptHandle: msg.ReceiptHandle,
+			})
+			if err != nil {
+				log.Printf("Error deleting message: %v", err)
+				continue
+			}
+
+		}
+	}
+}
+
+func (b *BrokerMessageWorkerSQS) Produce(message map[string]interface{}) {
+	b.messageChan <- message
+}
+
+func (b *BrokerMessageWorkerSQS) receiveMessages(queueUrl string) ([]*sqs.Message, error) {
+	out, err := b.client.ReceiveMessage(&sqs.ReceiveMessageInput{
+		QueueUrl:            aws.String(queueUrl),
+		MaxNumberOfMessages: aws.Int64(10),
+		WaitTimeSeconds:     aws.Int64(10),
+		VisibilityTimeout:   aws.Int64(10),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out.Messages, nil
+}
+
+func InitWorker(ctx context_manager.ContextManager, ch chan<- map[string]interface{}) (worker_manager.BrokerMessageConsumer, error) {
 
 	queueUrl := ctx.Get("aws_production_payment_sqs_url")
 	aws_access_key_id := ctx.Get("aws_access_key_id")
@@ -28,47 +84,13 @@ func InitWorker(ctx context_manager.ContextManager, ch chan<- map[string]interfa
 		}))
 	sqsClient := sqs.New(sess)
 
-	fmt.Print("Started Worker")
-
-	for {
-		messages, err := receiveMessages(ctx, sqsClient)
-		if err != nil {
-			log.Printf("Error receiving messages: %v", err)
-			continue
-		}
-		for _, msg := range messages {
-			var result map[string]interface{}
-			// Parse the JSON string into the map
-			if err := json.Unmarshal([]byte(*msg.Body), &result); err != nil {
-				fmt.Println("Error parsing JSON:", err)
-				return
-			}
-
-			ch <- result
-
-			_, err := sqsClient.DeleteMessage(&sqs.DeleteMessageInput{
-				QueueUrl:      aws.String(queueUrl.(string)),
-				ReceiptHandle: msg.ReceiptHandle,
-			})
-			if err != nil {
-				log.Printf("Error deleting message: %v", err)
-				continue
-			}
-
-		}
+	brokerMessage := BrokerMessageWorkerSQS{
+		client:      sqsClient,
+		queueUrl:    queueUrl.(string),
+		ctx:         ctx,
+		messageChan: ch,
 	}
-}
 
-func receiveMessages(ctx context_manager.ContextManager, sqsClient *sqs.SQS) ([]*sqs.Message, error) {
-	queueUrl := ctx.Get("aws_production_payment_sqs_url")
-	out, err := sqsClient.ReceiveMessage(&sqs.ReceiveMessageInput{
-		QueueUrl:            aws.String(queueUrl.(string)),
-		MaxNumberOfMessages: aws.Int64(10),
-		WaitTimeSeconds:     aws.Int64(10),
-		VisibilityTimeout:   aws.Int64(10),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return out.Messages, nil
+	go brokerMessage.Consume()
+	return &brokerMessage, nil
 }

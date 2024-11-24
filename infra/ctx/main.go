@@ -34,10 +34,9 @@ func (c *contextManager) PassContext(obj *gin.Context) {
 	}
 }
 
-func configContext(ctx *contextManager) error {
-	viper.SetConfigFile(".env")
+func configContext(ctx *contextManager, envName string) error {
+	viper.SetConfigFile(envName)
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Error reading config file: %v", err)
 		return errors.New("no environment variables found in configuration")
 	}
 
@@ -51,7 +50,7 @@ func NewContextManager() context_manager.ContextManager {
 	ctx := contextManager{
 		envs: make(map[string]any),
 	}
-	configContext(&ctx)
+	configContext(&ctx, "/home/gabs/Documents/projetos/fiap-fast-food-ms-producao/.env")
 	mongoClient, err := db.NewDatabaseManager(&ctx)
 	if err != nil {
 		log.Fatalf("Error creating mongo client")

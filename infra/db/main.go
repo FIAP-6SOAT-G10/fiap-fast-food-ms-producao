@@ -17,7 +17,8 @@ type databaseManager struct {
 }
 
 func (d *databaseManager) Create(collection string, data map[string]interface{}) (any, error) {
-	c := d.client.Database("fiap-tech-challenge").Collection(collection)
+	database := d.client.Database("fiap-tech-challenge")
+	c := database.Collection(collection)
 	insertOne, err := c.InsertOne(context.TODO(), data)
 	if err != nil {
 		return nil, err

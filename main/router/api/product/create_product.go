@@ -27,5 +27,5 @@ func CreatePedido(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"message": "Product Order Not Found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "OK"})
+	c.JSON(http.StatusCreated, gin.H{"message": "OK"})
 }
