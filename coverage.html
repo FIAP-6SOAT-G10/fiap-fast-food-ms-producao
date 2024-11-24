@@ -59,7 +59,7 @@
 				
 				<option value="file1">fiap-fast-food-ms-producao/domain/models/production_status.go (100.0%)</option>
 				
-				<option value="file2">fiap-fast-food-ms-producao/infra/ctx/main.go (40.0%)</option>
+				<option value="file2">fiap-fast-food-ms-producao/infra/ctx/main.go (66.7%)</option>
 				
 				<option value="file3">fiap-fast-food-ms-producao/infra/db/main.go (55.2%)</option>
 				
@@ -79,7 +79,7 @@
 				
 				<option value="file11">fiap-fast-food-ms-producao/main/worker/production_order.go (88.9%)</option>
 				
-				<option value="file12">fiap-fast-food-ms-producao/main/worker/worker.go (0.0%)</option>
+				<option value="file12">fiap-fast-food-ms-producao/main/worker/worker.go (60.0%)</option>
 				
 				<option value="file13">fiap-fast-food-ms-producao/mocks/mock_context_manager.go (55.6%)</option>
 				
@@ -157,11 +157,9 @@ import (
         "fiap-fast-food-ms-producao/adapter/context_manager"
         "fiap-fast-food-ms-producao/infra/db"
         "log"
-        "reflect"
         "sync"
 
         "github.com/gin-gonic/gin"
-        "github.com/golang/mock/gomock"
         "github.com/spf13/viper"
 )
 
@@ -212,54 +210,6 @@ func NewContextManager() context_manager.ContextManager <span class="cov0" title
         <span class="cov0" title="0">ctx.Set("mongo_client", mongoClient)
         return &amp;ctx</span>
 }
-
-type MockContextManager struct {
-        ctrl     *gomock.Controller
-        recorder *MockContextManagerMockRecorder
-}
-
-// MockContextManagerMockRecorder is the mock recorder for MockContextManager.
-type MockContextManagerMockRecorder struct {
-        mock *MockContextManager
-}
-
-// NewMockContextManager creates a new mock instance.
-func NewMockContextManager(ctrl *gomock.Controller) *MockContextManager <span class="cov0" title="0">{
-        mock := &amp;MockContextManager{ctrl: ctrl}
-        mock.recorder = &amp;MockContextManagerMockRecorder{mock}
-        return mock
-}</span>
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockContextManager) EXPECT() *MockContextManagerMockRecorder <span class="cov0" title="0">{
-        return m.recorder
-}</span>
-
-// Get mocks base method.
-func (m *MockContextManager) Get(key string) interface{} <span class="cov0" title="0">{
-        m.ctrl.T.Helper()
-        ret := m.ctrl.Call(m, "Get", key)
-        ret0, _ := ret[0].(interface{})
-        return ret0
-}</span>
-
-// Get indicates an expected call of Get.
-func (mr *MockContextManagerMockRecorder) Get(key interface{}) *gomock.Call <span class="cov0" title="0">{
-        mr.mock.ctrl.T.Helper()
-        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockContextManager)(nil).Get), key)
-}</span>
-
-// Set mocks base method.
-func (m *MockContextManager) Set(key string, value interface{}) <span class="cov0" title="0">{
-        m.ctrl.T.Helper()
-        m.ctrl.Call(m, "Set", key, value)
-}</span>
-
-// Set indicates an expected call of Set.
-func (mr *MockContextManagerMockRecorder) Set(key, value interface{}) *gomock.Call <span class="cov0" title="0">{
-        mr.mock.ctrl.T.Helper()
-        return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockContextManager)(nil).Set), key, value)
-}</span>
 </pre>
 		
 		<pre class="file" id="file3" style="display: none">package db
@@ -344,7 +294,7 @@ import (
 )
 
 // NewSQSClient initializes the SQS client.
-func NewSQSClient(region, queueURL string) (sqsiface.SQSAPI, error) <span class="cov8" title="1">{
+func NewSQSClient(region string) (sqsiface.SQSAPI, error) <span class="cov8" title="1">{
         sess, err := session.NewSession(&amp;aws.Config{
                 Region: aws.String(region),
         })
@@ -384,8 +334,7 @@ func StartRouter(ctx context_manager.ContextManager, dbManager database.Database
         }(dbManager)
         <span class="cov0" title="0">router := router.InitRouter(ctx, dbManager, productionUpdateChannel)
 
-        sqsUrl := ctx.Get("aws_production_update_sqs_url")
-        sqsClient, _ := sqs.NewSQSClient("us-east-1", sqsUrl.(string))
+        sqsClient, _ := sqs.NewSQSClient("us-east-1")
 
         go producer.ProductionOrderUpdateProducer(ctx, productionUpdateChannel, sqsClient)
         port := ctx.Get("port")
@@ -637,12 +586,12 @@ type BrokerMessageWorkerSQS struct {
         messageChan chan&lt;- map[string]interface{}
 }
 
-func (b *BrokerMessageWorkerSQS) Consume() <span class="cov0" title="0">{
-        for </span><span class="cov0" title="0">{
+func (b *BrokerMessageWorkerSQS) Consume() <span class="cov8" title="1">{
+        for </span><span class="cov8" title="1">{
                 messages, err := b.receiveMessages(b.queueUrl)
-                if err != nil </span><span class="cov0" title="0">{
+                if err != nil </span><span class="cov8" title="1">{
                         log.Printf("Error receiving messages: %v", err)
-                        continue</span>
+                        break</span>
                 }
                 <span class="cov0" title="0">for _, msg := range messages </span><span class="cov0" title="0">{
                         var result map[string]interface{}
@@ -671,20 +620,20 @@ func (b *BrokerMessageWorkerSQS) Produce(message map[string]interface{}) <span c
         b.messageChan &lt;- message
 }</span>
 
-func (b *BrokerMessageWorkerSQS) receiveMessages(queueUrl string) ([]*sqs.Message, error) <span class="cov0" title="0">{
+func (b *BrokerMessageWorkerSQS) receiveMessages(queueUrl string) ([]*sqs.Message, error) <span class="cov8" title="1">{
         out, err := b.client.ReceiveMessage(&amp;sqs.ReceiveMessageInput{
                 QueueUrl:            aws.String(queueUrl),
                 MaxNumberOfMessages: aws.Int64(10),
                 WaitTimeSeconds:     aws.Int64(10),
                 VisibilityTimeout:   aws.Int64(10),
         })
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
         <span class="cov0" title="0">return out.Messages, nil</span>
 }
 
-func InitWorker(ctx context_manager.ContextManager, ch chan&lt;- map[string]interface{}) (worker_manager.BrokerMessageConsumer, error) <span class="cov0" title="0">{
+func InitWorker(ctx context_manager.ContextManager, ch chan&lt;- map[string]interface{}) (worker_manager.BrokerMessageConsumer, error) <span class="cov8" title="1">{
 
         queueUrl := ctx.Get("aws_production_payment_sqs_url")
         aws_access_key_id := ctx.Get("aws_access_key_id")
@@ -707,7 +656,6 @@ func InitWorker(ctx context_manager.ContextManager, ch chan&lt;- map[string]inte
                 messageChan: ch,
         }
 
-        brokerMessage.Consume()
         go brokerMessage.Consume()
         return &amp;brokerMessage, nil
 }</span>

@@ -10,7 +10,7 @@ import (
 )
 
 // NewSQSClient initializes the SQS client.
-func NewSQSClient(region, queueURL string) (sqsiface.SQSAPI, error) {
+func NewSQSClient(region string) (sqsiface.SQSAPI, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(region),
 	})

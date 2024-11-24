@@ -25,7 +25,7 @@ func (b *BrokerMessageWorkerSQS) Consume() {
 		messages, err := b.receiveMessages(b.queueUrl)
 		if err != nil {
 			log.Printf("Error receiving messages: %v", err)
-			continue
+			break
 		}
 		for _, msg := range messages {
 			var result map[string]interface{}
@@ -90,7 +90,6 @@ func InitWorker(ctx context_manager.ContextManager, ch chan<- map[string]interfa
 		messageChan: ch,
 	}
 
-	brokerMessage.Consume()
 	go brokerMessage.Consume()
 	return &brokerMessage, nil
 }
