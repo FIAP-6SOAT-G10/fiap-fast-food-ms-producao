@@ -26,7 +26,7 @@ func StartRouter(ctx context_manager.ContextManager, dbManager database.Database
 	}(dbManager)
 	router := router.InitRouter(ctx, dbManager, productionUpdateChannel)
 
-	sqsClient, _ := sqs.NewSQSClient("us-east-1")
+	sqsClient, _ := sqs.NewSQSClient(ctx, "us-east-1")
 
 	go producer.ProductionOrderUpdateProducer(ctx, productionUpdateChannel, sqsClient)
 	port := ctx.Get("port")

@@ -24,3 +24,35 @@ func TestInitWorker(t *testing.T) {
 	assert.NotNil(t, worker)
 	assert.Nil(t, err)
 }
+
+func TestPubSubChannelWorker(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockCtx := mocks.NewMockContextManager(ctrl)
+	mockSqs := mocks.NewMockSQSAPI(ctrl)
+	ch := make(chan map[string]interface{}, 10)
+
+	broker := &BrokerMessageWorkerSQS{
+		client:      mockSqs,
+		queueUrl:    "queue-test",
+		ctx:         mockCtx,
+		messageChan: ch,
+	}
+
+	testMessage := map[string]interface{}{
+		"nome": "Test",
+	}
+
+	broker.Produce(testMessage)
+
+	select {
+	case receivedMessage := <-ch:
+		if receivedMessage["nome"] != testMessage["nome"] {
+			t.Errorf("Expected message: %v, got: %v", testMessage, receivedMessage)
+		}
+	default:
+		t.Errorf("No message received in the channel")
+	}
+
+}

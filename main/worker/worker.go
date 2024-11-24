@@ -11,10 +11,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 )
 
 type BrokerMessageWorkerSQS struct {
-	client      *sqs.SQS
+	client      sqsiface.SQSAPI
 	ctx         context_manager.ContextManager
 	queueUrl    string
 	messageChan chan<- map[string]interface{}
