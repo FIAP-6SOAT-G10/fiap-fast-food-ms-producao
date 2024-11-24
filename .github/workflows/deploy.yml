@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build Docker image
+    name: Build Docker Image
     runs-on: ubuntu-latest # specify the build machine
     steps:
       - # checkout to the repository on the build machine
