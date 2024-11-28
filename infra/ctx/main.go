@@ -1,14 +1,14 @@
 package ctx
 
 import (
-	"errors"
 	"fiap-fast-food-ms-producao/adapter/context_manager"
 	"fiap-fast-food-ms-producao/infra/db"
 	"log"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 type contextManager struct {
@@ -34,14 +34,10 @@ func (c *contextManager) PassContext(obj *gin.Context) {
 	}
 }
 
-func configContext(ctx *contextManager, envName string) error {
-	viper.SetConfigFile(envName)
-	if err := viper.ReadInConfig(); err != nil {
-		return errors.New("no environment variables found in configuration")
-	}
-
-	for _, key := range viper.AllKeys() {
-		ctx.Set(key, viper.Get(key))
+func configContext(ctx *contextManager) error {
+	for _, env := range os.Environ() {
+		values := strings.Split(env, "=")
+		ctx.Set(values[0], values[1])
 	}
 	return nil
 }
@@ -50,7 +46,7 @@ func NewContextManager() context_manager.ContextManager {
 	ctx := contextManager{
 		envs: make(map[string]any),
 	}
-	configContext(&ctx, "/home/gabs/Documents/projetos/fiap-fast-food-ms-producao/.env")
+	configContext(&ctx)
 	mongoClient, err := db.NewDatabaseManager(&ctx)
 	if err != nil {
 		log.Fatalf("Error creating mongo client")

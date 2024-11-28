@@ -10,7 +10,7 @@ import (
 )
 
 func ProductionOrderUpdateProducer(ctx context_manager.ContextManager, ch <-chan []byte, sqsClient sqsiface.SQSAPI) error {
-	queueUrl := ctx.Get("aws_production_update_sqs_url").(string)
+	queueUrl := ctx.Get("AWS_PRODUCTION_UPDATE_SQS_URL").(string)
 
 	for message := range ch {
 		_, err := sqsClient.SendMessage(&sqs.SendMessageInput{

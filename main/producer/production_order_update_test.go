@@ -27,7 +27,7 @@ func TestProductionOrderUpdateProducer(t *testing.T) {
 	defer ctrl.Finish()
 
 	mockCtx := mocks.NewMockContextManager(ctrl)
-	mockCtx.EXPECT().Get("aws_production_update_sqs_url").Return("https://example-queue-url").Times(1)
+	mockCtx.EXPECT().Get("AWS_PRODUCTION_UPDATE_SQS_URL").Return("https://example-queue-url").Times(1)
 
 	// Mock SQS Client
 	mockSQSClient := &MockSQSClient{

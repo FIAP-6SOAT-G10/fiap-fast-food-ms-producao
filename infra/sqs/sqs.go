@@ -13,9 +13,9 @@ import (
 
 // NewSQSClient initializes the SQS client.
 func NewSQSClient(ctx context_manager.ContextManager, region string) (sqsiface.SQSAPI, error) {
-	aws_access_key_id := ctx.Get("aws_access_key_id")
-	aws_secret_access_key := ctx.Get("aws_secret_access_key")
-	aws_session_token := ctx.Get("aws_session_token")
+	aws_access_key_id := ctx.Get("AWS_ACCESS_KEY_ID")
+	aws_secret_access_key := ctx.Get("AWS_SECRET_ACCESS_KEY")
+	aws_session_token := ctx.Get("AWS_SESSION_TOKEN")
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(region),
 		Credentials: credentials.NewStaticCredentials(aws_access_key_id.(string), aws_secret_access_key.(string), aws_session_token.(string)),

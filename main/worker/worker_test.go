@@ -12,11 +12,11 @@ func TestInitWorker(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockCtx := mocks.NewMockContextManager(ctrl)
 
-	mockCtx.EXPECT().Get("aws_production_payment_sqs_url").Return("default_value").Times(1)
-	mockCtx.EXPECT().Get("aws_access_key_id").Return("default_value").Times(1)
-	mockCtx.EXPECT().Get("aws_secret_access_key").Return("default_value").Times(1)
-	mockCtx.EXPECT().Get("aws_session_token").Return("default_value").Times(1)
-	mockCtx.EXPECT().Get("aws_region").Return("default_value").Times(1)
+	mockCtx.EXPECT().Get("AWS_PRODUCTION_PAYMENT_SQS_URL").Return("default_value").Times(1)
+	mockCtx.EXPECT().Get("AWS_ACCESS_KEY_ID").Return("default_value").Times(1)
+	mockCtx.EXPECT().Get("AWS_SECRET_ACCESS_KEY").Return("default_value").Times(1)
+	mockCtx.EXPECT().Get("AWS_SESSION_TOKEN").Return("default_value").Times(1)
+	mockCtx.EXPECT().Get("AWS_REGION").Return("default_value").Times(1)
 
 	ch := make(chan map[string]interface{}, 10)
 	worker, err := InitWorker(mockCtx, ch)

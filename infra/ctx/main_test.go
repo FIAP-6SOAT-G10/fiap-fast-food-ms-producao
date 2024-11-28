@@ -66,7 +66,7 @@ TEST_KEY2=value2
 	assert.Equal(t, "value2", viper.GetString("TEST_KEY2"))
 
 	// Call the function, passing the mocked config name
-	err = configContext(ctx, ".mock.env") // Use mock name for clarity
+	err = configContext(ctx) // Use mock name for clarity
 	assert.NoError(t, err, "should not return an error")
 
 	// Validate the context has the correct keys and values
@@ -82,7 +82,7 @@ func TestConfigContextFileNotFound(t *testing.T) {
 		mu:   sync.RWMutex{},
 	}
 
-	err := configContext(ctx, "nonexistent.env")
+	err := configContext(ctx)
 
 	assert.Error(t, err, "should return an error when file does not exist")
 	assert.Equal(t, "no environment variables found in configuration", err.Error())
