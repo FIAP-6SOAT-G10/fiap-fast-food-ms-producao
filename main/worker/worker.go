@@ -84,13 +84,22 @@ func InitWorker(ctx context_manager.ContextManager, ch chan<- map[string]interfa
 		}))
 	sqsClient := sqs.New(sess)
 
-	brokerMessage := BrokerMessageWorkerSQS{
-		client:      sqsClient,
-		queueUrl:    queueUrl.(string),
-		ctx:         ctx,
-		messageChan: ch,
-	}
+	brokerMessage := BuildWorker(sqsClient, ctx, queueUrl.(string), ch)
 
 	go brokerMessage.Consume()
-	return &brokerMessage, nil
+	return brokerMessage, nil
+}
+
+func BuildWorker(
+	client sqsiface.SQSAPI,
+	ctx context_manager.ContextManager,
+	queueUrl string,
+	messageChannel chan<- map[string]interface{},
+) worker_manager.BrokerMessageConsumer {
+	return &BrokerMessageWorkerSQS{
+		client:      client,
+		queueUrl:    queueUrl,
+		ctx:         ctx,
+		messageChan: messageChannel,
+	}
 }
