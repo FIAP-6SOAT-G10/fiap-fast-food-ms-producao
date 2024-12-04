@@ -16,8 +16,10 @@ type databaseManager struct {
 	client *mongo.Client
 }
 
+const fiap_database string = "fiap-tech-challenge"
+
 func (d *databaseManager) Create(collection string, data map[string]interface{}) (any, error) {
-	database := d.client.Database("fiap-tech-challenge")
+	database := d.client.Database(fiap_database)
 	c := database.Collection(collection)
 	insertOne, err := c.InsertOne(context.TODO(), data)
 	if err != nil {
@@ -27,7 +29,7 @@ func (d *databaseManager) Create(collection string, data map[string]interface{})
 }
 
 func (d *databaseManager) ReadOne(collection string, query map[string]interface{}) any {
-	c := d.client.Database("fiap-tech-challenge").Collection(collection)
+	c := d.client.Database(fiap_database).Collection(collection)
 	findOne := c.FindOne(context.TODO(), query)
 	var result models.ProductionOrder
 	if err := findOne.Decode(&result); err != nil {
@@ -38,7 +40,7 @@ func (d *databaseManager) ReadOne(collection string, query map[string]interface{
 }
 
 func (d *databaseManager) UpdateOne(collection string, query any, data map[string]interface{}) (any, error) {
-	c := d.client.Database("fiap-tech-challenge").Collection(collection)
+	c := d.client.Database(fiap_database).Collection(collection)
 
 	update := bson.M{"$set": data}
 
