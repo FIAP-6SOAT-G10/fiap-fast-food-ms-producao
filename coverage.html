@@ -61,11 +61,11 @@
 				
 				<option value="file2">fiap-fast-food-ms-producao/infra/ctx/main.go (66.7%)</option>
 				
-				<option value="file3">fiap-fast-food-ms-producao/infra/db/main.go (55.2%)</option>
+				<option value="file3">fiap-fast-food-ms-producao/infra/db/main.go (93.1%)</option>
 				
 				<option value="file4">fiap-fast-food-ms-producao/infra/sqs/sqs.go (75.0%)</option>
 				
-				<option value="file5">fiap-fast-food-ms-producao/main.go (0.0%)</option>
+				<option value="file5">fiap-fast-food-ms-producao/main.go (100.0%)</option>
 				
 				<option value="file6">fiap-fast-food-ms-producao/main/producer/production_order_update.go (71.4%)</option>
 				
@@ -151,10 +151,12 @@ func StatusFromInt(status int) string <span class="cov8" title="1">{
 		<pre class="file" id="file2" style="display: none">package ctx
 
 import (
-        "errors"
         "fiap-fast-food-ms-producao/adapter/context_manager"
         "fiap-fast-food-ms-producao/infra/db"
+        "fmt"
         "log"
+        "os"
+        "strings"
         "sync"
 
         "github.com/gin-gonic/gin"
@@ -166,47 +168,56 @@ type contextManager struct {
         mu   sync.RWMutex
 }
 
-func (c *contextManager) Set(key string, value any) <span class="cov8" title="1">{
+func (c *contextManager) Set(key string, value any) {
         c.mu.Lock()
-        defer c.mu.Unlock()
+        </span>defer c.mu.Unlock()
         c.envs[key] = value
-}</span>
+}
 
-func (c *contextManager) Get(key string) any <span class="cov8" title="1">{
+func (c *contextManager) Get(key string) any {
         c.mu.RLock()
-        defer c.mu.RUnlock()
+        </span>defer c.mu.RUnlock()
         return c.envs[key]
-}</span>
+}
 
-func (c *contextManager) PassContext(obj *gin.Context) <span class="cov8" title="1">{
-        for key, value := range c.envs </span><span class="cov8" title="1">{
+</span>func (c *contextManager) PassContext(obj *gin.Context) {
+        f</span>or key, value := range c.envs {
                 obj.Set(key, value)
-        }</span>
+        }
 }
 
-func configContext(ctx *contextManager, envName string) error <span class="cov8" title="1">{
-        viper.SetConfigFile(envName)
-        if err := viper.ReadInConfig(); err != nil </span><span class="cov8" title="1">{
-                return errors.New("no environment variables found in configuration")
-        }</span>
+func configContext(ctx *contextManager) erro</span><span class="cov8" title="1">r {
+        envFileLocation := os.Getenv("ENV_FILE_LOCATION")
+        i</span>f envFileLocation == "" {
+                log.Fatal("ENV_FILE_LOCATION is not set")
+        <span class="cov8" title="1">}
+</span>        fmt.Printf("%s", envFileLocation)
+        v</span>iper.SetConfigFile(envFileLocation)
+        <span class="cov8" title="1">viper.Auto</span>maticEnv()
 
-        <span class="cov8" title="1">for _, key := range viper.AllKeys() </span><span class="cov8" title="1">{
-                ctx.Set(key, viper.Get(key))
-        }</span>
-        <span class="cov8" title="1">return nil</span>
-}
+        err := viper.ReadInConfig()
+        if err != nil {
+                log.Fatalf("Error reading config file: %v", err)
+        }
 
-func NewContextManager() context_manager.ContextManager <span class="cov0" title="0">{
+        for _, key := range viper.AllKeys() {
+                fmt.Printf("%s -&gt; %s\n", key, viper.Get(key))
+                ctx.Set(strin</span><span class="cov0" title="0">gs.ToUpper(key), viper.Get(key))
+        }
+        r</span>eturn nil
+}<span class="cov0" title="0">
+
+</span>func NewContextManager() context_manager.ContextManager {
         ctx := contextManager{
                 envs: make(map[string]any),
         }
-        configContext(&amp;ctx, "/home/gabs/Documents/projetos/fiap-fast-food-ms-producao/.env")
+        configContext(&amp;ctx)
         mongoClient, err := db.NewDatabaseManager(&amp;ctx)
-        if err != nil </span><span class="cov0" title="0">{
-                log.Fatalf("Error creating mongo client")
-        }</span>
-        <span class="cov0" title="0">ctx.Set("mongo_client", mongoClient)
-        return &amp;ctx</span>
+        if err != nil {
+                log.Fatalf("Error creating mongo client: %v", err)
+        }
+        ctx.Set("mongo_client", mongoClient)
+        return &amp;ctx
 }
 </pre>
 		
@@ -228,79 +239,87 @@ type databaseManager struct {
         client *mongo.Client
 }
 
-func (d *databaseManager) Create(collection string, data map[string]interface{}) (any, error) <span class="cov8" title="1">{
-        database := d.client.Database("fiap-tech-challenge")
-        c := database.Collection(collection)
+const fiap_database string = "fiap-tech-challenge"
+
+func (d *databaseManager) Create(collection string, data map[string]interface{}) (any, error) {
+        database := d.client.Database(fiap_database)
+        c := database.</span><span class="cov8" title="1">Collection(collection)
         insertOne, err := c.InsertOne(context.TODO(), data)
-        if err != nil </span><span class="cov8" title="1">{
-                return nil, err
-        }</span>
-        <span class="cov0" title="0">return insertOne, nil</span>
+        i</span>f err != nil {
+        <span class="cov0" title="0">        return nil, err
+</span>        }
+        return insertOne, nil
 }
 
-func (d *databaseManager) ReadOne(collection string, query map[string]interface{}) any <span class="cov8" title="1">{
-        c := d.client.Database("fiap-tech-challenge").Collection(collection)
+func (d *databaseManager) ReadOne(collection string, query map[string]interface{}) any {
+        c := d.client.Database(fiap_database).Collection(collection)
         findOne := c.FindOne(context.TODO(), query)
-        var result models.ProductionOrder
-        if err := findOne.Decode(&amp;result); err != nil </span><span class="cov8" title="1">{
-                fmt.Println(err)
-                return nil
-        }</span>
-        <span class="cov0" title="0">return result</span>
+</span>        var result models.ProductionOrder
+        if err := findOne.Decode(&amp;result); err != nil {
+                </span>fmt.Println(err)
+        <span class="cov8" title="1">        return nil
+</span>        }
+        return result
 }
 
-func (d *databaseManager) UpdateOne(collection string, query any, data map[string]interface{}) (any, error) <span class="cov8" title="1">{
-        c := d.client.Database("fiap-tech-challenge").Collection(collection)
+func (d *databaseManager) UpdateOne(collection string, query any, data map[string]interface{}) (any, error) {
+        c := d.client.Database(fiap_database).Collection(collection)
 
         update := bson.M{"$set": data}
 
-        updateResult, err := c.UpdateOne(context.TODO(), query, update)
-        if err != nil </span><span class="cov8" title="1">{
-                return nil, err
-        }</span>
-        <span class="cov0" title="0">return updateResult, nil</span>
+</span>        updateResult, err := c.UpdateOne(context.TODO(), query, update)
+        i</span>f err != nil {
+        <span class="cov0" title="0">        return nil, err
+</span>        }
+        return updateResult, nil
 }
 
-func (d *databaseManager) Disconnect() error <span class="cov0" title="0">{
+f</span>unc (d *databaseManager) Disconnect() error {
         return nil
-}</span>
+}
 
-func NewDatabaseManager(ctx context_manager.ContextManager) (database.DatabaseManger, error) <span class="cov0" title="0">{
-        uri := ctx.Get("mongo_url")
-        clientOptions := options.Client().ApplyURI(uri.(string))
+func NewDatabaseManager(ctx context_manager.ContextManager) (database.DatabaseManger, error) {
+        uri := ctx.Get("MONGO_URL")
+        clientOptions </span><span class="cov8" title="1">:= options.Client().ApplyURI(uri.(string))
         client, err := mongo.Connect(context.TODO(), clientOptions)
-        if err != nil </span><span class="cov0" title="0">{
-                return nil, err
-        }</span>
-        <span class="cov0" title="0">if err := client.Ping(context.TODO(), nil); err != nil </span><span class="cov0" title="0">{
-                return nil, err
-        }</span>
-        <span class="cov0" title="0">fmt.Println("Connected to MongoDB")
-        return &amp;databaseManager{client: client}, nil</span>
+        i</span>f err != nil {
+        <span class="cov8" title="1">        return nil, err
+</span>        }
+        i</span>f err := client.Ping(context.TODO(), nil); err != nil {
+        <span class="cov8" title="1">        return nil, err
+        }
+</span>        fmt.Println("Connected to MongoDB")
+        return &amp;databaseManager{client: client}, nil
 }
 </pre>
 		
 		<pre class="file" id="file4" style="display: none">package sqs
 
 import (
+        "fiap-fast-food-ms-producao/adapter/context_manager"
         "fmt"
 
         "github.com/aws/aws-sdk-go/aws"
+        "github.com/aws/aws-sdk-go/aws/credentials"
         "github.com/aws/aws-sdk-go/aws/session"
         "github.com/aws/aws-sdk-go/service/sqs"
         "github.com/aws/aws-sdk-go/service/sqs/sqsiface"
 )
 
 // NewSQSClient initializes the SQS client.
-func NewSQSClient(region string) (sqsiface.SQSAPI, error) <span class="cov8" title="1">{
-        sess, err := session.NewSession(&amp;aws.Config{
-                Region: aws.String(region),
+func NewSQSClient(ctx context_manager.ContextManager, region string) (sqsiface.SQSAPI, error) {
+        awsAccessKeyId := ctx.Get("AWS_ACCESS_KEY_ID")
+        awsSecretAcces</span><span class="cov0" title="0">sKey := ctx.Get("AWS_SECRET_ACCESS_KEY")
+        awsSessionToken := ctx.Get("AWS_SESSION_TOKEN")
+        s</span>ess, err := session.NewSession(&amp;aws.Config{
+                Region:      aws.String(region),
+        <span class="cov8" title="1">        Credentials: credentials</span>.NewStaticCredentials(awsAccessKeyId.(string), awsSecretAccessKey.(string), awsSessionToken.(string)),
         })
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil {
                 return nil, fmt.Errorf("failed to create AWS session: %w", err)
-        }</span>
+        }
 
-        <span class="cov8" title="1">return sqs.New(sess), nil</span>
+        return sqs.New(sess), nil
 }
 </pre>
 		
@@ -322,39 +341,39 @@ import (
         "syscall"
 )
 
-func StartRouter(ctx context_manager.ContextManager, dbManager database.DatabaseManger) <span class="cov0" title="0">{
+func StartRouter(ctx context_manager.ContextManager, dbManager database.DatabaseManger) <span class="cov8" title="1">{
         productionUpdateChannel := make(chan []byte)
-        defer func(dbManager database.DatabaseManger) </span><span class="cov0" title="0">{
+        defer func(dbManager database.DatabaseManger) </span><span class="cov8" title="1">{
                 err := dbManager.Disconnect()
-                if err != nil </span><span class="cov0" title="0">{
+                if err != nil </span><span class="cov8" title="1">{
                         log.Fatalf("Err Disconnect from MongoDB")
                 }</span>
         }(dbManager)
-        <span class="cov0" title="0">router := router.InitRouter(ctx, dbManager, productionUpdateChannel)
+        <span class="cov8" title="1">router := router.InitRouter(ctx, dbManager, productionUpdateChannel)
 
-        sqsClient, _ := sqs.NewSQSClient("us-east-1")
+        sqsClient, _ := sqs.NewSQSClient(ctx, "us-east-1")
 
         go producer.ProductionOrderUpdateProducer(ctx, productionUpdateChannel, sqsClient)
-        port := ctx.Get("port")
+        port := ctx.Get("PORT")
         router.Run(fmt.Sprintf(":%v", port))</span>
 }
 
-func StartWorker(ctx context_manager.ContextManager, dbManager database.DatabaseManger) <span class="cov0" title="0">{
+func StartWorker(ctx context_manager.ContextManager, dbManager database.DatabaseManger) <span class="cov8" title="1">{
         productionOrderChannel := make(chan map[string]interface{})
         go worker.InitWorker(ctx, productionOrderChannel)
         go worker.ProductionOrderConsumer(dbManager, productionOrderChannel)
 }</span>
 
-func main() <span class="cov0" title="0">{
+func main() <span class="cov8" title="1">{
         quit := make(chan os.Signal, 1)
         signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
         ctx := ctx.NewContextManager()
         mongoClient, err := db.NewDatabaseManager(ctx)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return
         }</span>
 
-        <span class="cov0" title="0">go StartRouter(ctx, mongoClient)
+        <span class="cov8" title="1">go StartRouter(ctx, mongoClient)
         go StartWorker(ctx, mongoClient)
         &lt;-quit
         fmt.Println("Shutting down")</span>
@@ -373,7 +392,7 @@ import (
 )
 
 func ProductionOrderUpdateProducer(ctx context_manager.ContextManager, ch &lt;-chan []byte, sqsClient sqsiface.SQSAPI) error <span class="cov8" title="1">{
-        queueUrl := ctx.Get("aws_production_update_sqs_url").(string)
+        queueUrl := ctx.Get("AWS_PRODUCTION_UPDATE_SQS_URL").(string)
 
         for message := range ch </span><span class="cov8" title="1">{
                 _, err := sqsClient.SendMessage(&amp;sqs.SendMessageInput{
@@ -634,30 +653,39 @@ func (b *BrokerMessageWorkerSQS) receiveMessages(queueUrl string) ([]*sqs.Messag
 
 func InitWorker(ctx context_manager.ContextManager, ch chan&lt;- map[string]interface{}) (worker_manager.BrokerMessageConsumer, error) <span class="cov8" title="1">{
 
-        queueUrl := ctx.Get("aws_production_payment_sqs_url")
-        aws_access_key_id := ctx.Get("aws_access_key_id")
-        aws_secret_access_key := ctx.Get("aws_secret_access_key")
-        aws_session_token := ctx.Get("AWS_SESSION_TOKEN")
-        aws_region := ctx.Get("AWS_REGION")
+        queueUrl := ctx.Get("AWS_PRODUCTION_PAYMENT_SQS_URL")
+        awsAccessKeyId := ctx.Get("AWS_ACCESS_KEY_ID")
+        awsSecretAccessKey := ctx.Get("AWS_SECRET_ACCESS_KEY")
+        awsSessionToken := ctx.Get("AWS_SESSION_TOKEN")
+        awsRegion := ctx.Get("AWS_REGION")
 
         sess := session.Must(session.NewSession(
                 &amp;aws.Config{
                         Endpoint:    aws.String(""),
-                        Region:      aws.String(aws_region.(string)),
-                        Credentials: credentials.NewStaticCredentials(aws_access_key_id.(string), aws_secret_access_key.(string), aws_session_token.(string)),
+                        Region:      aws.String(awsRegion.(string)),
+                        Credentials: credentials.NewStaticCredentials(awsAccessKeyId.(string), awsSecretAccessKey.(string), awsSessionToken.(string)),
                 }))
         sqsClient := sqs.New(sess)
 
-        brokerMessage := BrokerMessageWorkerSQS{
-                client:      sqsClient,
-                queueUrl:    queueUrl.(string),
-                ctx:         ctx,
-                messageChan: ch,
-        }
+        brokerMessage := BuildWorker(sqsClient, ctx, queueUrl.(string), ch)
 
         go brokerMessage.Consume()
-        return &amp;brokerMessage, nil
-}</span>
+        return brokerMessage, nil
+}
+
+func BuildWorker(
+        client sqsiface.SQSAPI,
+        ctx context_manager.ContextManager,
+        </span>queueUrl string,
+        messageChannel chan&lt;- map[string]interface{},
+) worker_manager.BrokerMessageConsumer {
+        return &amp;BrokerMessageWorkerSQS{
+                client:      client,
+                queueUrl:    queueUrl,
+                ctx:         ctx,
+                messageChan: messageChannel,
+        }
+}
 </pre>
 		
 		</div>
