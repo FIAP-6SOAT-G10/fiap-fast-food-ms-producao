@@ -59,27 +59,21 @@
 				
 				<option value="file1">fiap-fast-food-ms-producao/domain/models/production_status.go (100.0%)</option>
 				
-				<option value="file2">fiap-fast-food-ms-producao/infra/ctx/main.go (66.7%)</option>
+				<option value="file2">fiap-fast-food-ms-producao/infra/db/main.go (100.0%)</option>
 				
-				<option value="file3">fiap-fast-food-ms-producao/infra/db/main.go (93.1%)</option>
+				<option value="file3">fiap-fast-food-ms-producao/main.go (100.0%)</option>
 				
-				<option value="file4">fiap-fast-food-ms-producao/infra/sqs/sqs.go (75.0%)</option>
+				<option value="file4">fiap-fast-food-ms-producao/main/producer/production_order_update.go (100.0%)</option>
 				
-				<option value="file5">fiap-fast-food-ms-producao/main.go (100.0%)</option>
+				<option value="file5">fiap-fast-food-ms-producao/main/router/api/product/create_product.go (100.0%)</option>
 				
-				<option value="file6">fiap-fast-food-ms-producao/main/producer/production_order_update.go (71.4%)</option>
+				<option value="file6">fiap-fast-food-ms-producao/main/router/api/product/update_product.go (100.0%)</option>
 				
-				<option value="file7">fiap-fast-food-ms-producao/main/router/api/product/create_product.go (100.0%)</option>
+				<option value="file7">fiap-fast-food-ms-producao/main/router/middleware/share_contex.go (100.0%)</option>
 				
-				<option value="file8">fiap-fast-food-ms-producao/main/router/api/product/update_product.go (78.8%)</option>
+				<option value="file8">fiap-fast-food-ms-producao/main/worker/production_order.go (100.0%)</option>
 				
-				<option value="file9">fiap-fast-food-ms-producao/main/router/middleware/share_contex.go (100.0%)</option>
-				
-				<option value="file10">fiap-fast-food-ms-producao/main/router/router.go (100.0%)</option>
-				
-				<option value="file11">fiap-fast-food-ms-producao/main/worker/production_order.go (88.9%)</option>
-				
-				<option value="file12">fiap-fast-food-ms-producao/main/worker/worker.go (63.3%)</option>
+				<option value="file9">fiap-fast-food-ms-producao/main/worker/worker.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -102,7 +96,7 @@ type ProductionOrderDTO struct {
         Status string `json:"status" binding:"required"`
 }
 
-func ToProductionOrderDTO(productionOrderModel *models.ProductionOrder) *ProductionOrderDTO <span class="cov8" title="1">{
+func ToProductionOrderDTO(productionOrderModel *models.ProductionOrder) *ProductionOrderDTO {
         poDTO := ProductionOrderDTO{
                 ID:     productionOrderModel.ID.Hex(),
                 Status: models.StatusFromInt(productionOrderModel.Status),
@@ -130,15 +124,15 @@ func (s Status) String() string <span class="cov8" title="1">{
 
 func StatusFromString(str string) (Status, error) <span class="cov8" title="1">{
         switch str </span>{
-        case "Pending":<span class="cov8" title="1">
-                return Pending, nil</span>
-        case "InProgress":<span class="cov8" title="1">
+        case "Pending":
+                return Pending<span class="cov8" title="1">, nil</span>
+        case "InProgress":
                 return InProgress, nil</span>
         case "Completed":<span class="cov8" title="1">
                 return Completed, nil</span>
         case "Failed":<span class="cov8" title="1">
                 return Failed, nil</span>
-        default:<span class="cov8" title="1">
+        default:
                 return 0, errors.New("invalid status")</span>
         }
 }
@@ -148,80 +142,7 @@ func StatusFromInt(status int) string <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package ctx
-
-import (
-        "fiap-fast-food-ms-producao/adapter/context_manager"
-        "fiap-fast-food-ms-producao/infra/db"
-        "fmt"
-        "log"
-        "os"
-        "strings"
-        "sync"
-
-        "github.com/gin-gonic/gin"
-        "github.com/spf13/viper"
-)
-
-type contextManager struct {
-        envs map[string]any
-        mu   sync.RWMutex
-}
-
-func (c *contextManager) Set(key string, value any) {
-        c.mu.Lock()
-        </span>defer c.mu.Unlock()
-        c.envs[key] = value
-}
-
-func (c *contextManager) Get(key string) any {
-        c.mu.RLock()
-        </span>defer c.mu.RUnlock()
-        return c.envs[key]
-}
-
-</span>func (c *contextManager) PassContext(obj *gin.Context) {
-        f</span>or key, value := range c.envs {
-                obj.Set(key, value)
-        }
-}
-
-func configContext(ctx *contextManager) erro</span><span class="cov8" title="1">r {
-        envFileLocation := os.Getenv("ENV_FILE_LOCATION")
-        i</span>f envFileLocation == "" {
-                log.Fatal("ENV_FILE_LOCATION is not set")
-        <span class="cov8" title="1">}
-</span>        fmt.Printf("%s", envFileLocation)
-        v</span>iper.SetConfigFile(envFileLocation)
-        <span class="cov8" title="1">viper.Auto</span>maticEnv()
-
-        err := viper.ReadInConfig()
-        if err != nil {
-                log.Fatalf("Error reading config file: %v", err)
-        }
-
-        for _, key := range viper.AllKeys() {
-                fmt.Printf("%s -&gt; %s\n", key, viper.Get(key))
-                ctx.Set(strin</span><span class="cov0" title="0">gs.ToUpper(key), viper.Get(key))
-        }
-        r</span>eturn nil
-}<span class="cov0" title="0">
-
-</span>func NewContextManager() context_manager.ContextManager {
-        ctx := contextManager{
-                envs: make(map[string]any),
-        }
-        configContext(&amp;ctx)
-        mongoClient, err := db.NewDatabaseManager(&amp;ctx)
-        if err != nil {
-                log.Fatalf("Error creating mongo client: %v", err)
-        }
-        ctx.Set("mongo_client", mongoClient)
-        return &amp;ctx
-}
-</pre>
-		
-		<pre class="file" id="file3" style="display: none">package db
+		<pre class="file" id="file2" style="display: none">package db
 
 import (
         "context"
@@ -241,25 +162,25 @@ type databaseManager struct {
 
 const fiap_database string = "fiap-tech-challenge"
 
-func (d *databaseManager) Create(collection string, data map[string]interface{}) (any, error) {
+func (d *databaseManager) Create(collection string, data map[string]interface{}) (any, error) <span class="cov8" title="1">{
         database := d.client.Database(fiap_database)
-        c := database.</span><span class="cov8" title="1">Collection(collection)
+        c := database.Collection(collection)
         insertOne, err := c.InsertOne(context.TODO(), data)
-        i</span>f err != nil {
-        <span class="cov0" title="0">        return nil, err
-</span>        }
-        return insertOne, nil
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return insertOne, nil</span>
 }
 
-func (d *databaseManager) ReadOne(collection string, query map[string]interface{}) any {
+func (d *databaseManager) ReadOne(collection string, query map[string]interface{}) any <span class="cov8" title="1">{
         c := d.client.Database(fiap_database).Collection(collection)
         findOne := c.FindOne(context.TODO(), query)
-</span>        var result models.ProductionOrder
-        if err := findOne.Decode(&amp;result); err != nil {
-                </span>fmt.Println(err)
-        <span class="cov8" title="1">        return nil
-</span>        }
-        return result
+        var result models.ProductionOrder
+        if err := findOne.Decode(&amp;result); err != nil </span><span class="cov8" title="1">{
+                fmt.Println(err)
+                return nil
+        }</span>
+        <span class="cov8" title="1">return result</span>
 }
 
 func (d *databaseManager) UpdateOne(collection string, query any, data map[string]interface{}) (any, error) {
@@ -267,63 +188,33 @@ func (d *databaseManager) UpdateOne(collection string, query any, data map[strin
 
         update := bson.M{"$set": data}
 
-</span>        updateResult, err := c.UpdateOne(context.TODO(), query, update)
-        i</span>f err != nil {
-        <span class="cov0" title="0">        return nil, err
-</span>        }
-        return updateResult, nil
+        updateResult, err := c.UpdateOne(context.TODO(), query, update)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }
+        r</span>eturn updateResult, nil</span>
 }
 
-f</span>unc (d *databaseManager) Disconnect() error {
+func (d *databaseManager) Disconnect() error <span class="cov8" title="1">{
         return nil
-}
+}</span>
 
-func NewDatabaseManager(ctx context_manager.ContextManager) (database.DatabaseManger, error) {
+func NewDatabaseManager(ctx context_manager.ContextManager) (database.DatabaseManger, error) <span class="cov8" title="1">{
         uri := ctx.Get("MONGO_URL")
-        clientOptions </span><span class="cov8" title="1">:= options.Client().ApplyURI(uri.(string))
+        clientOptions := options.Client().ApplyURI(uri.(string))
         client, err := mongo.Connect(context.TODO(), clientOptions)
-        i</span>f err != nil {
-        <span class="cov8" title="1">        return nil, err
-</span>        }
-        i</span>f err := client.Ping(context.TODO(), nil); err != nil {
-        <span class="cov8" title="1">        return nil, err
-        }
-</span>        fmt.Println("Connected to MongoDB")
-        return &amp;databaseManager{client: client}, nil
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">if err := client.Ping(context.TODO(), nil); err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">fmt.Println("Connected to MongoDB")
+        return &amp;databaseManager{client: client}, nil</span>
 }
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package sqs
-
-import (
-        "fiap-fast-food-ms-producao/adapter/context_manager"
-        "fmt"
-
-        "github.com/aws/aws-sdk-go/aws"
-        "github.com/aws/aws-sdk-go/aws/credentials"
-        "github.com/aws/aws-sdk-go/aws/session"
-        "github.com/aws/aws-sdk-go/service/sqs"
-        "github.com/aws/aws-sdk-go/service/sqs/sqsiface"
-)
-
-// NewSQSClient initializes the SQS client.
-func NewSQSClient(ctx context_manager.ContextManager, region string) (sqsiface.SQSAPI, error) {
-        awsAccessKeyId := ctx.Get("AWS_ACCESS_KEY_ID")
-        awsSecretAcces</span><span class="cov0" title="0">sKey := ctx.Get("AWS_SECRET_ACCESS_KEY")
-        awsSessionToken := ctx.Get("AWS_SESSION_TOKEN")
-        s</span>ess, err := session.NewSession(&amp;aws.Config{
-                Region:      aws.String(region),
-        <span class="cov8" title="1">        Credentials: credentials</span>.NewStaticCredentials(awsAccessKeyId.(string), awsSecretAccessKey.(string), awsSessionToken.(string)),
-        })
-        if err != nil {
-                return nil, fmt.Errorf("failed to create AWS session: %w", err)
-        }
-
-        return sqs.New(sess), nil
-}
-</pre>
-		
-		<pre class="file" id="file5" style="display: none">package main
+		<pre class="file" id="file3" style="display: none">package main
 
 import (
         "fiap-fast-food-ms-producao/adapter/context_manager"
@@ -362,9 +253,9 @@ func StartWorker(ctx context_manager.ContextManager, dbManager database.Database
         productionOrderChannel := make(chan map[string]interface{})
         go worker.InitWorker(ctx, productionOrderChannel)
         go worker.ProductionOrderConsumer(dbManager, productionOrderChannel)
-}</span>
+}
 
-func main() <span class="cov8" title="1">{
+</span>func main() <span class="cov8" title="1">{
         quit := make(chan os.Signal, 1)
         signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
         ctx := ctx.NewContextManager()
@@ -376,11 +267,11 @@ func main() <span class="cov8" title="1">{
         <span class="cov8" title="1">go StartRouter(ctx, mongoClient)
         go StartWorker(ctx, mongoClient)
         &lt;-quit
-        fmt.Println("Shutting down")</span>
-}
+        fmt.Println("Shutting down")
+</span>}
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package producer
+		<pre class="file" id="file4" style="display: none">package producer
 
 import (
         "fiap-fast-food-ms-producao/adapter/context_manager"
@@ -399,8 +290,8 @@ func ProductionOrderUpdateProducer(ctx context_manager.ContextManager, ch &lt;-c
                         QueueUrl:    aws.String(queueUrl),
                         MessageBody: aws.String(string(message)),
                 })
-                if err != nil </span><span class="cov0" title="0">{
-                        log.Printf("Failed to send message: %v", err)
+                if err != nil {
+                        log.Printf("F</span><span class="cov8" title="1">ailed to send message: %v", err)
                         return err
                 }</span>
         }
@@ -409,7 +300,7 @@ func ProductionOrderUpdateProducer(ctx context_manager.ContextManager, ch &lt;-c
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package product
+		<pre class="file" id="file5" style="display: none">package product
 
 import (
         "fiap-fast-food-ms-producao/adapter/database"
@@ -438,11 +329,11 @@ func CreatePedido(c *gin.Context) <span class="cov8" title="1">{
                 c.JSON(http.StatusNotFound, gin.H{"message": "Product Order Not Found"})
                 return
         }</span>
-        <span class="cov8" title="1">c.JSON(http.StatusCreated, gin.H{"message": "OK"})</span>
-}
+        c.JSON(http.StatusCreated, gin.H{"message": "OK"})
+}<span class="cov8" title="1">
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package product
+		<pre class="file" id="file6" style="display: none">package product
 
 import (
         "encoding/json"
@@ -469,13 +360,13 @@ func UpdateStatusPedido(c *gin.Context) <span class="cov8" title="1">{
         productionOrder := mongoClient.ReadOne(collectionName, map[string]interface{}{
                 "_id": objId,
         })
-        if productionOrder == nil </span><span class="cov0" title="0">{
+        if productionOrder == nil </span><span class="cov8" title="1">{
                 c.JSON(http.StatusNotFound, gin.H{"message": "Product Order Not Found"})
                 return
         }</span>
 
         <span class="cov8" title="1">newStatus, err := models.StatusFromString(status)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 c.JSON(http.StatusNotFound, gin.H{"message": "Status Not Found"})
                 return
         }</span>
@@ -492,7 +383,7 @@ func UpdateStatusPedido(c *gin.Context) <span class="cov8" title="1">{
         poDTO := dto.ToProductionOrderDTO(&amp;po)
 
         poBytes, err := StructToBytes(*poDTO)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 c.JSON(http.StatusInternalServerError, gin.H{"message": "Internal Server Error"})
                 return
         }</span>
@@ -501,21 +392,21 @@ func UpdateStatusPedido(c *gin.Context) <span class="cov8" title="1">{
 
         productionUpdateChannel.(chan&lt;- []byte) &lt;- poBytes
         fmt.Println("OK")
-        c.JSON(http.StatusOK, poDTO)</span>
+        c.JSON(http.StatusOK, poDTO)
 }
-
+</span>
 func StructToBytes(dto dto.ProductionOrderDTO) ([]byte, error) <span class="cov8" title="1">{
         // Marshal the struct to JSON
         jsonData, err := json.Marshal(dto)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
 
-        <span class="cov8" title="1">return jsonData, nil</span>
-}
+        return jsonData, nil
+}<span class="cov8" title="1">
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package middleware
+		<pre class="file" id="file7" style="display: none">package middleware
 
 import (
         "fiap-fast-food-ms-producao/adapter/context_manager"
@@ -524,39 +415,17 @@ import (
         "github.com/gin-gonic/gin"
 )
 
-func SharedContextMiddleware(context *context_manager.ContextManager, dbManager database.DatabaseManger, productionUpdateChannel chan&lt;- []byte) gin.HandlerFunc <span class="cov8" title="1">{
-        return func(c *gin.Context) </span><span class="cov8" title="1">{
+func SharedContextMiddleware(context *context_manager.ContextManager, dbManager database.DatabaseManger, productionUpdateChannel chan&lt;- []byte) gin.HandlerFunc {
+        return func(c *gin.Context) {<span class="cov8" title="1">
                 (*context).PassContext(c)
                 c.Set("db_client", dbManager)
                 c.Set("production_update_channel", productionUpdateChannel)
                 c.Next()
-        }</span>
+        }</span></span>
 }
 </pre>
 		
-		<pre class="file" id="file10" style="display: none">package router
-
-import (
-        "fiap-fast-food-ms-producao/adapter/context_manager"
-        "fiap-fast-food-ms-producao/adapter/database"
-        "fiap-fast-food-ms-producao/main/router/api/product"
-        "fiap-fast-food-ms-producao/main/router/middleware"
-
-        "github.com/gin-gonic/gin"
-)
-
-func InitRouter(context context_manager.ContextManager, dbManager database.DatabaseManger, productionUpdateChannel chan&lt;- []byte) *gin.Engine <span class="cov8" title="1">{
-        router := gin.New()
-        router.Use(middleware.SharedContextMiddleware(&amp;context, dbManager, productionUpdateChannel))
-
-        router.PUT("/pedido/:id/:status", product.UpdateStatusPedido)
-        router.POST("/pedido", product.CreatePedido)
-
-        return router
-}</span>
-</pre>
-		
-		<pre class="file" id="file11" style="display: none">package worker
+		<pre class="file" id="file8" style="display: none">package worker
 
 import (
         "encoding/json"
@@ -570,7 +439,7 @@ func ProductionOrderConsumer(dbManager database.DatabaseManger, ch &lt;-chan map
         case message := &lt;-ch:<span class="cov8" title="1">
                 var messageMap any
                 if messageProductOrder, ok := message["Message"].(string); ok </span><span class="cov8" title="1">{
-                        if err := json.Unmarshal([]byte(messageProductOrder), &amp;messageMap); err != nil </span><span class="cov0" title="0">{
+                        if err := json.Unmarshal([]byte(messageProductOrder), &amp;messageMap); err != nil </span><span class="cov8" title="1">{
                                 messageMap = messageProductOrder
                         }</span>
                 }
@@ -581,7 +450,7 @@ func ProductionOrderConsumer(dbManager database.DatabaseManger, ch &lt;-chan map
 }
 </pre>
 		
-		<pre class="file" id="file12" style="display: none">package worker
+		<pre class="file" id="file9" style="display: none">package worker
 
 import (
         "encoding/json"
@@ -611,21 +480,21 @@ func (b *BrokerMessageWorkerSQS) Consume() <span class="cov8" title="1">{
                         log.Printf("Error receiving messages: %v", err)
                         break</span>
                 }
-                <span class="cov0" title="0">for _, msg := range messages </span><span class="cov0" title="0">{
+                <span class="cov8" title="1">for _, msg := range messages </span><span class="cov8" title="1">{
                         var result map[string]interface{}
                         // Parse the JSON string into the map
-                        if err := json.Unmarshal([]byte(*msg.Body), &amp;result); err != nil </span><span class="cov0" title="0">{
+                        if err := json.Unmarshal([]byte(*msg.Body), &amp;result); err != nil </span><span class="cov8" title="1">{
                                 fmt.Println("Error parsing JSON:", err)
                                 return
                         }</span>
 
-                        <span class="cov0" title="0">b.Produce(result)
+                        <span class="cov8" title="1">b.Produce(result)
 
                         _, err := b.client.DeleteMessage(&amp;sqs.DeleteMessageInput{
                                 QueueUrl:      aws.String(b.queueUrl),
                                 ReceiptHandle: msg.ReceiptHandle,
                         })
-                        if err != nil </span><span class="cov0" title="0">{
+                        if err != nil </span><span class="cov8" title="1">{
                                 log.Printf("Error deleting message: %v", err)
                                 continue</span>
                         }
@@ -648,7 +517,7 @@ func (b *BrokerMessageWorkerSQS) receiveMessages(queueUrl string) ([]*sqs.Messag
         if err != nil </span><span class="cov8" title="1">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">return out.Messages, nil</span>
+        <span class="cov8" title="1">return out.Messages, nil</span>
 }
 
 func InitWorker(ctx context_manager.ContextManager, ch chan&lt;- map[string]interface{}) (worker_manager.BrokerMessageConsumer, error) <span class="cov8" title="1">{
@@ -671,14 +540,14 @@ func InitWorker(ctx context_manager.ContextManager, ch chan&lt;- map[string]inte
 
         go brokerMessage.Consume()
         return brokerMessage, nil
-}
+}</span>
 
 func BuildWorker(
         client sqsiface.SQSAPI,
         ctx context_manager.ContextManager,
-        </span>queueUrl string,
+        queueUrl string,
         messageChannel chan&lt;- map[string]interface{},
-) worker_manager.BrokerMessageConsumer {
+) worker_manager.BrokerMessageConsumer {<span class="cov8" title="1">
         return &amp;BrokerMessageWorkerSQS{
                 client:      client,
                 queueUrl:    queueUrl,
