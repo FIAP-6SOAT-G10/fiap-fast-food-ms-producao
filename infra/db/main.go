@@ -48,6 +48,7 @@ func (d *databaseManager) UpdateOne(collection string, query any, data map[strin
 	if err != nil {
 		return nil, err
 	}
+
 	return updateResult, nil
 }
 
