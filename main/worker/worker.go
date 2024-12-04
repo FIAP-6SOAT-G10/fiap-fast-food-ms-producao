@@ -71,16 +71,16 @@ func (b *BrokerMessageWorkerSQS) receiveMessages(queueUrl string) ([]*sqs.Messag
 func InitWorker(ctx context_manager.ContextManager, ch chan<- map[string]interface{}) (worker_manager.BrokerMessageConsumer, error) {
 
 	queueUrl := ctx.Get("AWS_PRODUCTION_PAYMENT_SQS_URL")
-	aws_access_key_id := ctx.Get("AWS_ACCESS_KEY_ID")
-	aws_secret_access_key := ctx.Get("AWS_SECRET_ACCESS_KEY")
-	aws_session_token := ctx.Get("AWS_SESSION_TOKEN")
-	aws_region := ctx.Get("AWS_REGION")
+	awsAccessKeyId := ctx.Get("AWS_ACCESS_KEY_ID")
+	awsSecretAccessKey := ctx.Get("AWS_SECRET_ACCESS_KEY")
+	awsSessionToken := ctx.Get("AWS_SESSION_TOKEN")
+	awsRegion := ctx.Get("AWS_REGION")
 
 	sess := session.Must(session.NewSession(
 		&aws.Config{
 			Endpoint:    aws.String(""),
-			Region:      aws.String(aws_region.(string)),
-			Credentials: credentials.NewStaticCredentials(aws_access_key_id.(string), aws_secret_access_key.(string), aws_session_token.(string)),
+			Region:      aws.String(awsRegion.(string)),
+			Credentials: credentials.NewStaticCredentials(awsAccessKeyId.(string), awsSecretAccessKey.(string), awsSessionToken.(string)),
 		}))
 	sqsClient := sqs.New(sess)
 
