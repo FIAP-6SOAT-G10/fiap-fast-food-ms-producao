@@ -4,7 +4,7 @@ Este repositório contém o código-fonte do Microsserviço de Produção, desen
 
 ## Descrição
 
-O Microsserviço de Produção é responsável por gerenciar os processos de produção no sistema de fast food, incluindo o controle de pedidos, preparação de alimentos e atualização de status de produção.
+O Microsserviço de Produção é responsável por gerenciar os processos de produção no sistema de Fat Food, incluindo o controle de pedidos, atualização da preparação de alimentos e atualização de status de produção.
 
 ## Estrutura do Projeto
 
