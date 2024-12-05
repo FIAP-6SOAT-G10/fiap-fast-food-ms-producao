@@ -16,5 +16,6 @@ O Microsserviço de Produção é responsável por gerenciar os processos de pro
 ├── mocks/      # Implementações de mocks para testes
 
 Abaixo, você pode conferir uma captura de tela que mostra a cobertura do código
-![Print Sonar](sonar-project.properties)
+
+<img height="350" src="ms-producao.png" title="Fiap Logo" width="1000"/>
 
