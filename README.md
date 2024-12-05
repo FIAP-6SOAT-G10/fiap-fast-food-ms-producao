@@ -18,6 +18,5 @@ O Microsserviço de Produção é responsável por gerenciar os processos de pro
 
 Abaixo, você pode conferir uma captura de tela que mostra a cobertura do código
 
-<img height="350" src="ms-producao.png" title="Fiap Logo" width="1000"/>
-![Print Sonar](sonar-project.properties)
+<img src="ms-producao.png" title="Fiap Sonar"/>
 
