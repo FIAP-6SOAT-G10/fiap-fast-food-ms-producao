@@ -14,3 +14,7 @@ O Microsserviço de Produção é responsável por gerenciar os processos de pro
 ├── infra/      # Implementações de infraestrutura, como banco de dados e rede
 ├── main/       # Ponto de entrada da aplicação
 ├── mocks/      # Implementações de mocks para testes
+
+Abaixo, você pode conferir uma captura de tela que mostra a cobertura do código
+![Print Sonar](sonar-project.properties)
+
