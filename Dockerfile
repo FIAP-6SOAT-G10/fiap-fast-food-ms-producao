@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-COPY .env /app/.env
+# COPY .env /app/.env
 
 RUN go build .
 
