@@ -42,7 +42,7 @@ jobs:
           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
           docker build -t fiap-tech-go .
           docker tag fiap-tech-go:latest $ECR_REGISTRY/productions:latest
-          docker push $ECR_REGISTRY/fiap-tech-go:latest
+          docker push $ECR_REGISTRY/productions:latest
 
   deploy:
     runs-on: ubuntu-latest
