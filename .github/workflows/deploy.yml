@@ -1,9 +1,10 @@
 name: Build ECR
 
 on:
-    push:
-        branches: 
-            - "main"
+  workflow_dispatch:
+  push:
+    branches: 
+      - "main"
 
 jobs:
   build:
@@ -43,4 +44,15 @@ jobs:
           docker tag fiap-tech-go:latest $ECR_REGISTRY/fiap-tech-go:latest
           docker push $ECR_REGISTRY/fiap-tech-go:latest
 
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy Microservice on K8S
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.TARGET_REPO_PAT }}
+          repository: FIAP-6SOAT-G10/fiap-fast-food-ms-producao-k8s
+          event-type: trigger-deploy
 
