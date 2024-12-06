@@ -7,8 +7,25 @@ on:
       - "main"
 
 jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21' # Specify your Go version
+
+      - name: Run tests and generate coverage report
+        run: |
+          go tool cover -func=coverage.out | grep total | awk '{print "Average Coverage:", $3}'
+  
   build:
     name: Build Docker Image
+    needs: coverage
     runs-on: ubuntu-latest # specify the build machine
     steps:
       - # checkout to the repository on the build machine
@@ -55,20 +72,4 @@ jobs:
           token: ${{ secrets.TARGET_REPO_PAT }}
           repository: FIAP-6SOAT-G10/fiap-fast-food-ms-producao-k8s
           event-type: trigger-deploy
-
-  coverage:
-      runs-on: ubuntu-latest
-
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v3
-
-        - name: Set up Go
-          uses: actions/setup-go@v4
-          with:
-            go-version: '1.21' # Specify your Go version
-
-        - name: Run tests and generate coverage report
-          run: |
-            go tool cover -func=coverage.out | grep total | awk '{print "Average Coverage:", $3}'
 
