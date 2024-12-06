@@ -21,7 +21,25 @@ jobs:
 
       - name: Run tests and generate coverage report
         run: |
-          go tool cover -func=coverage.out | grep total | awk '{print "Average Coverage:", $3}'
+          echo $(go tool cover -func=coverage.out | grep total | awk '{print "Average Coverage:", $3}') > coverage_output.txt
+
+      - name: Read coverage output
+        id: read_coverage
+        run: |
+          echo "coverage_output=$(cat coverage_output.txt)" >> $GITHUB_ENV
+  
+      - name: Post coverage as PR comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const coverage = process.env.coverage_output;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `### :bar_chart: Code Coverage\n\n${coverage}`,
+            });
+  
   
   build:
     name: Build Docker Image
