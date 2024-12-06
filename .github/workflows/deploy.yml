@@ -11,35 +11,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21' # Specify your Go version
-
       - name: Run tests and generate coverage report
         run: |
-          echo $(go tool cover -func=coverage.out | grep total | awk '{print "Average Coverage:", $3}') > coverage_output.txt
-
-      - name: Read coverage output
-        id: read_coverage
-        run: |
-          echo "coverage_output=$(cat coverage_output.txt)" >> $GITHUB_ENV
-  
-      - name: Post coverage as PR comment
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const coverage = process.env.coverage_output;
-            github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: `### :bar_chart: Code Coverage\n\n${coverage}`,
-            });
-  
+          go tool cover -func=coverage.out | grep total | awk '{print "Average Coverage:", $3}'
   
   build:
     name: Build Docker Image
