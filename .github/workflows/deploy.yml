@@ -39,10 +39,10 @@ jobs:
           # Build a docker container and
           # push it to ECR so that it can
           # be deployed to ECS.
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $ECR_REGISTRY
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
           docker build -t fiap-tech-go .
-          docker tag fiap-tech-go:latest $ECR_REGISTRY/productions:latest
-          docker push $ECR_REGISTRY/productions:latest
+          docker tag ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/productions:latest
+          docker push ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/productions:latest
 
   deploy:
     runs-on: ubuntu-latest
