@@ -1,4 +1,4 @@
-name: Build ECR
+name: Build Deploy
 
 on:
   workflow_dispatch:
