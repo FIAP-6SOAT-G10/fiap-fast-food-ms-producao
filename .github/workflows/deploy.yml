@@ -50,7 +50,7 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build -t fiap-tech-go .
-          docker tag ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/productions:latest
+          docker tag fiap-tech-go ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/productions:latest
           docker push ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/productions:latest
 
   deploy:
