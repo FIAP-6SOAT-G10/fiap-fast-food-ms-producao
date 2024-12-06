@@ -21,7 +21,25 @@ jobs:
 
       - name: Run tests and generate coverage report
         run: |
-          go tool cover -func=coverage.out | grep total | awk '{print "Average Coverage:", $3}'
+          echo $(go tool cover -func=coverage.out | grep total | awk '{print "Average Coverage:", $3}') > coverage_output.txt
+
+      - name: Read coverage output
+        id: read_coverage
+        run: |
+          echo "coverage_output=$(cat coverage_output.txt)" >> $GITHUB_ENV
+  
+      - name: Post coverage as PR comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const coverage = process.env.coverage_output;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `### :bar_chart: Code Coverage\n\n${coverage}`,
+            });
+  
   
   build:
     name: Build Docker Image
@@ -56,10 +74,10 @@ jobs:
           # Build a docker container and
           # push it to ECR so that it can
           # be deployed to ECS.
-          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 755335462617.dkr.ecr.us-east-1.amazonaws.com
           docker build -t fiap-tech-go .
-          docker tag ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/productions:latest
-          docker push ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/productions:latest
+          docker tag 755335462617.dkr.ecr.us-east-1.amazonaws.com/productions.amazonaws.com/productions:latest
+          docker push 755335462617.dkr.ecr.us-east-1.amazonaws.com/productions.amazonaws.com/productions:latest
 
   deploy:
     runs-on: ubuntu-latest
