@@ -3,14 +3,12 @@ package ctx
 import (
 	"fiap-fast-food-ms-producao/adapter/context_manager"
 	"fiap-fast-food-ms-producao/infra/db"
-	"fmt"
 	"log"
 	"os"
 	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
 )
 
 type contextManager struct {
@@ -37,22 +35,9 @@ func (c *contextManager) PassContext(obj *gin.Context) {
 }
 
 func configContext(ctx *contextManager) error {
-	envFileLocation := os.Getenv("ENV_FILE_LOCATION")
-	if envFileLocation == "" {
-		log.Fatal("ENV_FILE_LOCATION is not set")
-	}
-	fmt.Printf("%s", envFileLocation)
-	viper.SetConfigFile(envFileLocation)
-	viper.AutomaticEnv()
-
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatalf("Error reading config file: %v", err)
-	}
-
-	for _, key := range viper.AllKeys() {
-		fmt.Printf("%s -> %s\n", key, viper.Get(key))
-		ctx.Set(strings.ToUpper(key), viper.Get(key))
+	for _, env := range os.Environ() {
+		values := strings.Split(env, "=")
+		ctx.Set(values[0], values[1])
 	}
 	return nil
 }
