@@ -36,6 +36,4 @@ RUN go build .
 
 EXPOSE 8080
 
-# ENV ENV_FILE_LOCATION=/app/.env
-
 CMD ["./fiap-fast-food-ms-producao"]

@@ -57,7 +57,7 @@ func (d *databaseManager) Disconnect() error {
 }
 
 func NewDatabaseManager(ctx context_manager.ContextManager) (database.DatabaseManger, error) {
-	uri := ctx.Get("MONGO_URL")
+	uri := ctx.Get("mongodb+srv://gabrielmarcelino165:ZN4uSOBqiqSBUwQi@cluster0.beext.mongodb.net")
 	clientOptions := options.Client().ApplyURI(uri.(string))
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
