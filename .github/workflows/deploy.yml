@@ -49,9 +49,19 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t fiap-tech-go .
-          docker tag fiap-tech-go ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/productions:1.0
-          docker push ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/productions:1.0
+          docker build \
+            --build-arg AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            --build-arg AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            --build-arg AWS_SESSION_TOKEN=${{ secrets.AWS_SESSION_TOKEN }} \
+            --build-arg AWS_PRODUCTION_PAYMENT_SQS_URL=${{ secrets.AWS_PRODUCTION_PAYMENT_SQS_URL }} \
+            --build-arg AWS_PRODUCTION_UPDATE_SQS_URL=${{ secrets.AWS_PRODUCTION_UPDATE_SQS_URL }} \
+            --build-arg AWS_REGION=${{ secrets.AWS_REGION }} \
+            --build-arg PORT=${{ secrets.PORT }} \
+            --build-arg MONGO_URL=${{ secrets.MONGO_URL }} \ -t fiap-tech-go .
+            
+          docker tag fiap-tech-go ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/productions:latest
+          
+          docker push ${{ steps.aws_account.outputs.account_id }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/productions:latest
 
   deploy:
     runs-on: ubuntu-latest
