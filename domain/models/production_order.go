@@ -5,6 +5,7 @@ import (
 )
 
 type ProductionOrder struct {
-	ID     primitive.ObjectID `bson:"_id,omitempty"`
-	Status int                `bson:"status"`
+	ID         primitive.ObjectID `bson:"_id,omitempty"`
+	Status     int                `bson:"status"`
+	ExternalId string             `bson:"externalId"`
 }

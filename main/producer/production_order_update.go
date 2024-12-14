@@ -19,7 +19,7 @@ func ProductionOrderUpdateProducer(ctx context_manager.ContextManager, ch <-chan
 		})
 		if err != nil {
 			log.Printf("Failed to send message: %v", err)
-			return err
+			continue
 		}
 	}
 

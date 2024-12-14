@@ -35,7 +35,9 @@ func StartRouter(ctx context_manager.ContextManager, dbManager database.Database
 
 func StartWorker(ctx context_manager.ContextManager, dbManager database.DatabaseManger) {
 	productionOrderChannel := make(chan map[string]interface{})
+	fmt.Println("Initing Worker...")
 	go worker.InitWorker(ctx, productionOrderChannel)
+
 	go worker.ProductionOrderConsumer(dbManager, productionOrderChannel)
 }
 
@@ -47,9 +49,9 @@ func main() {
 	if err != nil {
 		return
 	}
-
-	go StartRouter(ctx, mongoClient)
 	go StartWorker(ctx, mongoClient)
+	go StartRouter(ctx, mongoClient)
+
 	<-quit
 	fmt.Println("Shutting down")
 }

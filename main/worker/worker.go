@@ -26,11 +26,11 @@ func (b *BrokerMessageWorkerSQS) Consume() {
 		messages, err := b.receiveMessages(b.queueUrl)
 		if err != nil {
 			log.Printf("Error receiving messages: %v", err)
-			break
 		}
 		for _, msg := range messages {
 			var result map[string]interface{}
-			// Parse the JSON string into the map
+			fmt.Println(msg)
+			// Parse the JSON string into the ma
 			if err := json.Unmarshal([]byte(*msg.Body), &result); err != nil {
 				fmt.Println("Error parsing JSON:", err)
 				return
@@ -76,6 +76,9 @@ func InitWorker(ctx context_manager.ContextManager, ch chan<- map[string]interfa
 	awsSessionToken := ctx.Get("AWS_SESSION_TOKEN")
 	awsRegion := ctx.Get("AWS_REGION")
 
+	fmt.Printf("Queue URL: %v\nAWS Access Key ID: %v\nAWS Secret Access Key: %v\nAWS Session Token: %v\nAWS Region: %v\n",
+		queueUrl, awsAccessKeyId, awsSecretAccessKey, awsSessionToken, awsRegion)
+
 	sess := session.Must(session.NewSession(
 		&aws.Config{
 			Endpoint:    aws.String(""),
@@ -87,6 +90,7 @@ func InitWorker(ctx context_manager.ContextManager, ch chan<- map[string]interfa
 	brokerMessage := BuildWorker(sqsClient, ctx, queueUrl.(string), ch)
 
 	go brokerMessage.Consume()
+	fmt.Println("Worker SQS Started")
 	return brokerMessage, nil
 }
 

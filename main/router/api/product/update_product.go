@@ -10,7 +10,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func UpdateStatusPedido(c *gin.Context) {
@@ -21,9 +20,9 @@ func UpdateStatusPedido(c *gin.Context) {
 	mongoClient := dbClient.(database.DatabaseManger)
 	collectionName := "production-order"
 
-	objId, _ := primitive.ObjectIDFromHex(id)
+	objId := id
 	productionOrder := mongoClient.ReadOne(collectionName, map[string]interface{}{
-		"_id": objId,
+		"externalId": objId,
 	})
 	if productionOrder == nil {
 		c.JSON(http.StatusNotFound, gin.H{"message": "Product Order Not Found"})
@@ -40,7 +39,7 @@ func UpdateStatusPedido(c *gin.Context) {
 		po.Status = int(newStatus)
 	}
 
-	query := bson.M{"_id": objId}
+	query := bson.M{"externalId": objId}
 	data := map[string]interface{}{
 		"status": newStatus,
 	}
